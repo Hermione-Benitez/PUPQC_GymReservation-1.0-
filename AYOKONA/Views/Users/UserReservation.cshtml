@@ -1,0 +1,407 @@
+﻿@{
+    Layout = "Students_Layout";
+}
+<!--admin cancelled page -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PUPQC Gym Reservation - Requests</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #ffb6b6, #ffc6c6);
+            min-height: 80vh;
+            padding-bottom: 100px;
+            background-image: url(Images/UsersBG.jpg);
+        }
+
+        .header {
+            background-color: #ffb000;
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+            .header h1 {
+                font-size: 18px;
+                font-weight: bold;
+                color: #970c10;
+            }
+
+            .header .star {
+                color: #970c10;
+                margin-right: 10px;
+            }
+
+        .nav-links {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+            .nav-links a {
+                color: white;
+                text-decoration: none;
+                font-size: 16px;
+                font-weight: bold;
+            }
+
+                .nav-links a:hover {
+                    color: #970c10;
+                }
+
+                .nav-links a.active {
+                    color: #970c10;
+                }
+
+        .menu-icon {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 30px 20px;
+            max-width: 800px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .page-title {
+            color: #970c10;
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 25px;
+        }
+
+        .tabs-container {
+            display: flex;
+        }
+
+        .tab {
+            background: white;
+            border: none;
+            padding: 15px 25px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+            flex: 1;
+            color: #970c10;
+        }
+
+            .tab:first-child {
+                border-radius: 8px 0 0 8px;
+            }
+
+            .tab:last-child {
+                border-radius: 0 8px 8px 0;
+            }
+
+            .tab.active {
+                background: #ffb000;
+                color: white;
+            }
+
+            .tab:hover:not(.active) {
+                background: #c0c0c0;
+            }
+
+        .reservation-container {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            min-height: 500px;
+        }
+
+        .reservation-item {
+            border: 2px solid #ffb000;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            overflow: hidden;
+            background: white;
+        }
+
+        .reservation-header {
+            background: #ffb000;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .date-time-info {
+            display: flex;
+            gap: 30px;
+        }
+
+            .date-time-info span {
+                color: white;
+                font-weight: bold;
+                font-size: 13px;
+            }
+
+        .approval-status {
+            background: #00bf63;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: bold;
+            font-style: italic;
+        }
+
+        .reservation-details {
+            padding: 15px 20px;
+            background: white;
+            display: flex;
+            gap: 40px;
+        }
+
+        .detail-item {
+            font-size: 13px;
+        }
+
+        .detail-label {
+            font-weight: bold;
+            color: #970c10;
+        }
+
+        .detail-value {
+            color: #970c10;
+            font-style: italic;
+        }
+
+        .footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: #ffb000;
+            color: white;
+            padding: 15px 20px;
+            font-size: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .left-section {
+            display: flex;
+            gap: 40px;
+            flex: 1;
+        }
+
+        .developers, .names {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            color: #970c10;
+        }
+
+        .section-title {
+            font-weight: bold;
+            font-size: 16px;
+            margin-bottom: 3px;
+        }
+
+        .sub_section-title {
+            font-size: 16px;
+            margin-bottom: 3px;
+        }
+
+        .content-text {
+            font-size: 16px;
+            line-height: 1.3;
+            color: white;
+        }
+
+        .contact-section {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 8px;
+        }
+
+        .contact-title {
+            font-weight: bold;
+            font-size: 18px;
+            color: #970c10;
+            align-self: baseline;
+        }
+
+        .social-icons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .social-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .right-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .gym-box {
+            background-color: rgba(0, 0, 0, 0.1);
+            border: 2px solid #8b4513;
+            border-radius: 8px;
+            padding: 8px 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 100px;
+        }
+
+        .gym-logo {
+            padding: 8px 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 164px;
+            height: 84px;
+            margin-bottom: 2px;
+        }
+
+        @@media (max-width: 788px) {
+            .nav-menu
+
+        {
+            display: none;
+        }
+
+        .date-time-info {
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .reservation-details {
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .footer {
+            flex-direction: row;
+            gap: 10px;
+            min-width: max-content;
+        }
+
+        .left-section {
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .contact-section {
+            align-items: column;
+        }
+
+        }
+
+        .logo {
+            display: flex;
+            flex-direction: column;
+            align-items: baseline;
+            width: 64px;
+            height: 64px;
+        }
+    </style>
+</head>
+<body>
+
+
+    <div class="main-content">
+        <h1 class="page-title">Your Reservations</h1>
+
+        <div class="tabs-container">
+            <button class="tab active" onclick="showTab('approved')">Approved</button>
+            <button class="tab" onclick="showTab('pending')">Pending</button>
+            <button class="tab" onclick="showTab('cancelled')">Cancelled</button>
+        </div>
+
+        <div class="reservation-container">
+            <div id="approved" class="tab-content active">
+                <div class="reservation-item">
+                    <div class="reservation-header">
+                        <div class="date-time-info">
+                            <span>Date: May 1, 2025</span>
+                            <span>Time: May 1, 2025</span>
+                        </div>
+                        <div class="approval-status">Approved on MM/DD/YYYY</div>
+                    </div>
+
+                    <div class="reservation-details">
+                        <div class="detail-item">
+                            <span class="detail-label">Category: </span>
+                            <span class="detail-value">Class</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Course/Year/Section: </span>
+                            <span class="detail-value">BSIT 2-2</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="pending" class="tab-content">
+                <div style="text-align: center; padding: 40px; color: #970c10;">
+                    <p>No pending reservations</p>
+                </div>
+            </div>
+
+            <div id="cancelled" class="tab-content">
+                <div style="text-align: center; padding: 40px; color: #970c10;">
+                    <p>No cancelled reservations</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showTab(tabName) {
+            // Hide all tab contents
+            const tabContents = document.querySelectorAll('.tab-content');
+            tabContents.forEach(content => {
+                content.classList.remove('active');
+            });
+
+            // Remove active class from all tabs
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // Show selected tab content
+            document.getElementById(tabName).classList.add('active');
+
+            // Add active class to clicked tab
+            event.target.classList.add('active');
+        }
+    </script>
+</body>
+</html>

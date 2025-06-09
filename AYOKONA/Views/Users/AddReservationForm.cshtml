@@ -1,0 +1,302 @@
+﻿@{
+    ViewData["Title"] = "Reservation Form";
+    Layout = "~/Views/Shared/Students_Layout.cshtml";
+}
+
+@section Styles {
+    <style>
+        .reservation-form-wrapper {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 2rem auto;
+            max-width: 900px;
+            padding: 0 15px;
+        }
+
+        .reservation-form-container {
+            background-color: #fff;
+            border-radius: 0.75rem;
+            padding: 2rem;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            border: 1px solid #ddd;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .form-heading {
+            color: #970c10;
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+            text-align: center;
+            width: 100%;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 1rem;
+        }
+
+        .form-group-row {
+            display: flex;
+            gap: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+            .form-group-row > div {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+            }
+
+        label {
+            display: block;
+            margin-bottom: 0.4rem;
+            font-weight: 600;
+            color: #970c10;
+            font-size: 1.05rem;
+        }
+
+        input[type="text"],
+        input[type="date"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 1rem 1.25rem;
+            border: 1px solid #ccc;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            color: #333;
+            background-color: #f9f9f9;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+            input[type="text"]:focus,
+            input[type="date"]:focus,
+            select:focus,
+            textarea:focus {
+                border-color: #970c10;
+                box-shadow: 0 0 0 3px rgba(151, 12, 16, 0.2);
+                outline: none;
+            }
+
+            input[type="text"][readonly] {
+                background-color: #eee;
+                color: #555;
+                cursor: not-allowed;
+                border-style: dashed;
+                border-color: #ccc;
+            }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+            line-height: 1.6;
+        }
+
+        .character-count {
+            font-size: 0.8rem;
+            color: #777;
+            text-align: right;
+            margin-top: 0.2rem;
+        }
+
+        .submit-button-container {
+            display: flex;
+            justify-content: center;
+            width: 100%;
+            margin-top: 1.5rem;
+        }
+
+        .submit-button {
+            background-color: #970c10;
+            color: white;
+            padding: 1rem 1.5rem;
+            border: none;
+            border-radius: 5rem;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            width: fit-content;
+        }
+
+            .submit-button:hover {
+                background-color: #c00c10;
+                transform: translateY(-2px);
+            }
+
+        .date-time-group {
+            background-color: #f9f9f9;
+            border: 1px solid #ccc;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: row;
+            gap: 1.5rem;
+            align-items: flex-start;
+        }
+
+            .date-time-group .form-group {
+                flex: 1;
+                margin-bottom: 0;
+            }
+
+                .date-time-group .form-group select {
+                    background-color: #fff;
+                }
+
+        @@media (max-width: 768px) {
+            .reservation-form-container {
+                padding: 1.5rem;
+                margin: 1rem auto;
+            }
+
+            .form-heading {
+                font-size: 1.5rem;
+            }
+
+            .form-group-row {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            .form-group {
+                margin-bottom: 0.8rem;
+            }
+
+            label {
+                font-size: 1rem;
+            }
+
+            input[type="text"],
+            input[type="date"],
+            select,
+            textarea {
+                padding: 0.8rem 1rem;
+                font-size: 0.9rem;
+            }
+
+            textarea {
+                min-height: 80px;
+                line-height: 1.4;
+            }
+
+            .date-time-group {
+                flex-direction: column;
+                padding: 1rem;
+                gap: 1rem;
+            }
+
+            .submit-button {
+                padding: 0.8rem 1.2rem;
+                font-size: 1rem;
+            }
+        }
+    </style>
+}
+
+<div class="w-full flex-grow flex flex-col items-center">
+    <div class="reservation-form-wrapper">
+        <h2 class="form-heading">Reservation Form</h2>
+
+        <div class="reservation-form-container">
+            <form action="/User/SubmitReservation" method="post">
+                <div class="form-group">
+                    <label for="category">Category</label>
+                    <select id="category" name="Category" required>
+                        <option value="">Select Category</option>
+                        <option value="Academic Class">Academic Class</option>
+                        <option value="Organization">Organization</option>
+                    </select>
+                </div>
+
+                <div class="form-group-row">
+                    <div>
+                        <label for="name">Name <span style="font-weight: normal; font-size: 0.85em;"></span></label>
+                        <input type="text" id="name" name="Name" value="@ViewData["Fullname"]" readonly>
+                    </div>
+                    <div>
+                        <label for="section">Course / Year / Section <span style="font-weight: normal; font-size: 0.85em;"></span></label>
+                        <input type="text" id="section" name="Section" value="@ViewData["Section"]" readonly>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="professorInCharge">Professor In-Charge</label>
+                    <input type="text" id="professorInCharge" name="ProfessorInCharge" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="purposeOfUse">Purpose of Use</label>
+                    <textarea id="purposeOfUse" name="PurposeOfUse" maxlength="200" required></textarea>
+                    <div class="character-count">
+                        <span id="purposeCharCount">0</span>/200 characters
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Select Date and Time</label>
+                    <div class="date-time-group">
+                        <div class="form-group">
+                            <label for="reservationDate">Date</label>
+                            <input type="date" id="reservationDate" name="ReservationDate" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="reservationTime">Time</label>
+                            <select id="reservationTime" name="ReservationTime" required>
+                                <option value="">Select Time</option>
+                                <option value="7:30 AM - 10:30 AM">7:30 AM - 10:30 AM</option>
+                                <option value="10:30 AM - 1:30 PM">10:30 AM - 1:30 PM</option>
+                                <option value="1:30 PM - 4:30 PM">1:30 PM - 4:30 PM</option>
+                                <option value="4:30 PM - 7:30 PM">4:30 PM - 7:30 PM</option>
+                                <option value="7:30 PM - 8:30 PM">7:30 PM - 8:30 PM</option>
+                                <option value="Whole Day">Whole Day</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="submit-button-container">
+                    <button type="submit" class="submit-button">Submit</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Character counter for Purpose of Use
+        document.addEventListener('DOMContentLoaded', function() {
+            const purposeOfUse = document.getElementById('purposeOfUse');
+            const purposeCharCount = document.getElementById('purposeCharCount');
+            const maxLength = purposeOfUse.getAttribute('maxlength');
+
+            if (purposeOfUse && purposeCharCount) {
+                purposeOfUse.addEventListener('input', function() {
+                    const currentLength = this.value.length;
+                    purposeCharCount.textContent = currentLength;
+                });
+            }
+
+            // Optional: Set default date to today for convenience
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
+            const dd = String(today.getDate()).padStart(2, '0');
+            const todayString = `${yyyy}-${mm}-${dd}`;
+
+            const reservationDateInput = document.getElementById('reservationDate');
+            if (reservationDateInput) {
+                // Set min date to today to prevent selecting past dates
+                reservationDateInput.setAttribute('min', todayString);
+            }
+        });
+    </script>
+}

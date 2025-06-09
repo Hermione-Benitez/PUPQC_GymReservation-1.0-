@@ -1,0 +1,140 @@
+@model AYOKONA.Models.AdminLoginViewModel
+
+@{
+    ViewData["Title"] = "Admin Login";
+}
+
+<style>
+    body {
+        background-color: #970c10;
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+    }
+
+    .main-container {
+        min-height: 80vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+        gap: 2rem;
+    }
+
+    .login-section {
+        flex: 1;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .login-card {
+        background: #fff;
+        padding: 2rem;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        max-width: 400px;
+        width: 100%;
+        text-align: left;
+    }
+
+        .login-card h2 {
+            font-weight: bold;
+            color: #8B0000;
+            text-align: center;
+        }
+
+    .control-label {
+        text-align: left;
+    }
+
+    .form-control {
+        border-radius: 5px;
+    }
+
+    .btn-login {
+        background-color: #8B0000;
+        color: white;
+        width: 100%;
+    }
+
+        .btn-login:hover {
+            background-color: #a40000;
+        }
+
+    .forgot-link,
+    .create-link {
+        font-size: 0.9rem;
+    }
+
+    .create-link {
+        color: orange;
+    }
+
+    .pup-logo {
+        max-width: 80px;
+        margin: 0 auto 1rem;
+        display: block;
+    }
+
+    .image-section {
+        width: 710px;
+        height: 370px;
+        background-image: url('/Images/BottomAdmin.jpg');
+        background-size: cover;
+        background-position: center;
+        border-radius: 10px;
+    }
+
+    @@media (max-width: 768px) {
+        .main-container
+
+    {
+        flex-direction: column;
+        padding: 1rem;
+    }
+
+    .image-section {
+        display: none;
+    }
+
+    }
+</style>
+
+<div class="main-container">
+    <div class="login-section">
+        <div class="login-card">
+            <img src="~/Images/MainLogo.png" alt="PUP Logo" class="pup-logo" />
+            <h6 class="text-danger font-weight-bold text-center">ADMIN</h6>
+            <h2>Gym Reservation</h2>
+            <p class="font-weight-bold text-center">Welcome to PUPQC Admin Portal</p>
+            <p class="text-center">Enter your credentials below</p>
+
+            <form asp-action="AdminLogin" asp-controller="Admin" method="post">
+                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+                <div class="form-group">
+                    <label asp-for="Email" class="control-label"></label>
+                    <input asp-for="Email" class="form-control" placeholder="Enter your email" />
+                    <span asp-validation-for="Email" class="text-danger"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="Password" class="control-label"></label>
+                    <input asp-for="Password" type="password" class="form-control" placeholder="Enter your password" />
+                    <span asp-validation-for="Password" class="text-danger"></span>
+                </div>
+                <p class="mt-3">dito? <a asp-action="AdminDashboard" asp-controller="Admin" class="create-link">Login</a></p>
+                <input type="submit" value="Log In" class="btn btn-login" />
+            </form>
+        </div>
+    </div>
+
+    <div class="image-section"></div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

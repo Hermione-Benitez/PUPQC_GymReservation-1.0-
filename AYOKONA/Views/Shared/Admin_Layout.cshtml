@@ -1,0 +1,182 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - PUPQC Gym Reservation</title>
+
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/borat.styles.css" asp-append-version="true" />
+
+    <style>
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-image: url('../Images/AdminsBG.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+        }
+
+        header {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+        }
+
+        .main-content {
+            flex: 1;
+            padding-top: 80px;
+        }
+
+        footer {
+            margin-top: auto;
+        }
+
+        .navbar-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .navbar-admin-link {
+            color: #ffffff !important;
+            transition: color 0.3s ease;
+            text-decoration: none;
+        }
+
+            .navbar-admin-link:hover {
+                color: #ffffff !important;
+            }
+
+            .navbar-admin-link.active {
+                color: #ffb000 !important;
+                font-weight: bold;
+            }
+
+                .navbar-admin-link.active:hover {
+                    color: #ffd700 !important;
+                }
+    </style>
+
+    @await RenderSectionAsync("Styles", required: false)
+</head>
+<body>
+    <header>
+        <nav class="bg-[#970c10] text-white shadow-md py-2">
+            <div class="container-fluid flex items-center justify-between">
+                <div class="flex items-center space-x-2 px-10 py-0">
+                    <img src="~/Images/MainLogo.png" alt="PUPQC Logo" class="h-14 w-14">
+                    <span class="text-xl font-semibold text-white">PUPQC Gym Reservation</span>
+                </div>
+                <div class="flex items-center space-x-6 px-6 py-0">
+                    <a href="/Admin/AdminDashboard" id="navAdminDashboard" class="navbar-admin-link">Dashboard</a>
+                    <a href="/Admin/AdminManage" id="navManageAdmin" class="navbar-admin-link">Manage</a>
+                    <a href="/Admin/AdminProfile" id="navAdminProfile" class="navbar-admin-link">Profile</a>
+                    <div class="dropdown d-inline">
+                        <button id="navUserDrawerBtn" class="navbar-user-link btn btn-link dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-bars text-xl"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navUserDrawerBtn">
+                            <li>
+                                <a class="dropdown-item" href="">Upload CV</a>
+                            </li>
+                            <li>
+                                <form asp-controller="Admin" asp-action="Logout" method="post" class="m-0 p-0">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="dropdown-item text-danger" style="background:none;border:none;padding:0.5rem 1rem;width:100%;text-align:left;">Log Out</button>
+                                </form>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="main-content" role="main">
+        @RenderBody()
+    </main>
+
+    <footer class="text-white mt-8" style="background-color: #970c10;">
+        <div class="container-fluid flex flex-col sm:flex-row items-center justify-between text-base px-6 py-2">
+            <div class="text-center sm:text-left mb-0 sm:mb-0 space-y-0.5">
+                <p class="font-semibold mb-0" style="color: #ffb000;">Developers:</p>
+                <p style="color: #ffb000;">BSIT 2-2 | GROUP 2</p>
+                <p style="color: #ffb000;">Developed on Year 2025</p>
+            </div>
+
+            <div class="text-center sm:text-left mb-0 sm:mb-0 space-y-0.5">
+                <p class="text-white font-bold mb-0">Benitez, Hermione</p>
+                <p class="text-white font-bold mb-0">Espinosa, Cyrah</p>
+                <p class="text-white font-bold mb-0">Lauron, John Ray</p>
+            </div>
+
+            <div class="text-center sm:text-left mb-0 sm:mb-0 space-y-0.5">
+                <p class="text-white font-bold mb-0">Quisado, Kristel</p>
+                <p class="text-white font-bold mb-0">Singayan, Jechris</p>
+                <p class="text-white font-bold mb-0">Tablizo, Rodbenedict</p>
+            </div>
+
+            <div class="flex flex-col items-center sm:items-start mb-0 sm:mb-0">
+                <p class="font-semibold mb-2" style="color: #ffb000;">Contact Us:</p>
+                <div class="flex space-x-3 text-2xl">
+                    <a href="#" class="transition-colors text-white"><i class="fab fa-facebook"></i></a>
+                    <a href="#" class="transition-colors text-white"><i class="fab fa-instagram"></i></a>
+                    <a href="#" class="transition-colors text-white"><i class="fas fa-envelope"></i></a>
+                </div>
+            </div>
+
+            <div class="flex flex-col items-center sm:items-end">
+                <img src="~/Images/BottomAdmin.jpg" alt="" class="h-20 mx-auto sm:ml-auto sm:mr-0">
+            </div>
+        </div>
+    </footer>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const navLinks = document.querySelectorAll('.navbar-admin-link');
+
+            function setActiveNavLink() {
+                const currentPath = window.location.pathname;
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    const linkHref = link.getAttribute('href');
+
+                    if (linkHref && currentPath.includes(linkHref.substring(1))) {
+                        link.classList.add('active');
+                    }
+                });
+
+                if (currentPath === '/Admin' || currentPath === '/Admin/') {
+                    document.getElementById('navAdminDashboard')?.classList.add('active');
+                }
+            }
+
+            setActiveNavLink();
+
+            const navAdminDrawerBtn = document.getElementById('navAdminDrawerBtn');
+            if (navAdminDrawerBtn) {
+                navAdminDrawerBtn.addEventListener('click', () => {
+                    console.log("Drawer button clicked! Implement your drawer opening/closing logic here.");
+                });
+            }
+        });
+    </script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

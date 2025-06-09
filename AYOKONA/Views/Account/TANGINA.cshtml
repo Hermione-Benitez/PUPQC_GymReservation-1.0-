@@ -1,0 +1,90 @@
+﻿@model AYOKONA.Models.AdminLoginViewModel
+
+@{
+    ViewData["Title"] = "AdminLogin";
+}
+
+<style>
+    .admin-login-container {
+        min-height: 80vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+        background: linear-gradient(135deg, #ffb6b6, #ffc6c6);
+    }
+
+    .admin-login-card {
+        background: #fff;
+        padding: 2rem;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.2);
+        width: 100%;
+        max-width: 400px;
+        text-align: center;
+    }
+
+        .admin-login-card h2 {
+            font-weight: bold;
+            color: #8B0000;
+        }
+
+    .form-control {
+        border-radius: 5px;
+    }
+
+    .btn-login {
+        background-color: #8B0000;
+        color: white;
+        width: 100%;
+        margin-top: 1rem;
+    }
+
+        .btn-login:hover {
+            background-color: #a40000;
+        }
+
+    .pup-logo {
+        max-width: 80px;
+        margin-bottom: 1rem;
+    }
+
+    label {
+        font-weight: bold;
+        color: #333;
+    }
+</style>
+
+<div class="admin-login-container">
+    <div class="admin-login-card">
+        <img src="~/Images/MainLogo.png" alt="PUP Logo" class="pup-logo" />
+        <h6 class="text-danger font-weight-bold">ADMIN</h6>
+        <h2>Gym Reservation</h2>
+        <p class="font-weight-bold">Welcome to PUPQC Admin Portal</p>
+        <p>Enter your credentials below</p>
+
+        <form asp-action="AdminDashboard" asp-controller="Admin" method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+            <div class="form-group">
+                <label asp-for="Email"></label>
+                <input asp-for="Email" class="form-control" placeholder="Enter your email" />
+                <span asp-validation-for="Email" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Password"></label>
+                <input asp-for="Password" type="password" class="form-control" placeholder="Enter your password" />
+                <span asp-validation-for="Password" class="text-danger"></span>
+            </div>
+
+            <input type="submit" value="Log In" class="btn btn-login" />
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

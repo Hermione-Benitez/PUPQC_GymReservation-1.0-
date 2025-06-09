@@ -1,0 +1,209 @@
+﻿@using Microsoft.AspNetCore.Http
+@inject IHttpContextAccessor HttpContextAccessor
+
+@{
+    ViewData["Title"] = "Homepage";
+    Layout = "~/Views/Shared/Students_Layout.cshtml";
+    var username = ViewData["Username"] as string;
+    if (string.IsNullOrEmpty(username) && HttpContextAccessor.HttpContext?.User?.Identity?.IsAuthenticated == true)
+    {
+        username = HttpContextAccessor.HttpContext.User.Identity.Name;
+    }
+}
+
+@section Styles {
+    <style>
+        .welcome-text-container {
+            font-size: 2rem;
+            font-weight: bold;
+            text-align: center;
+            margin-top: 1.5rem;
+            margin-bottom: 1.5rem;
+            color: #333;
+        }
+
+        .about-section-wrapper {
+            width: 100%;
+            background-image: url('/Images/AboutPUPQCGym.jpg'); /* Update with your actual image path */
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            padding: 1.5rem;
+            display: flex;
+            justify-content: center;
+        }
+
+        .about-content-wrapper {
+            background-color: rgba(255, 255, 255, 0.9); /* Light overlay for readability */
+            padding: 2rem;
+            border-radius: 1rem;
+            max-width: 900px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .about-heading {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+            color: #970c10;
+        }
+
+        .about-text-container {
+            font-size: 1.1rem;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .submit-reservation-banner {
+            width: 100%;
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: white;
+            background-color: #970c10;
+            padding: 1rem 2rem;
+            text-align: center;
+        }
+
+        .icon-button-container {
+            background-color: #fff;
+            border: 2px solid #970c10;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            color: #970c10;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .icon-button-container:hover {
+            background-color: #f8d7da;
+            transform: scale(1.05);
+        }
+
+        .icon-wrapper {
+            font-size: 3rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .icon-text {
+            font-size: 1rem;
+            font-weight: bold;
+        }
+
+        .guide-section-full-width-wrapper {
+            width: 100%;
+            background-color: #fffbe6;
+            padding: 2rem;
+            margin-top: 2rem;
+        }
+
+        .guide-section-content-wrapper {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .guide-section-heading {
+            font-size: 1.75rem;
+            font-weight: bold;
+            color: #970c10;
+            margin-bottom: 1rem;
+        }
+
+        .guide-step-container {
+            background-color: #fff0b3;
+            border-left: 5px solid #ffb000;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 0.5rem;
+        }
+
+        .guide-step-text-number {
+            font-weight: bold;
+            color: #ff6600;
+            margin-bottom: 0.5rem;
+        }
+
+        .guide-step-text {
+            font-size: 1rem;
+            color: #333;
+        }
+    </style>
+}
+
+<div class="w-full flex-grow flex flex-col items-center">
+    <div class="welcome-text-container">
+        Welcome, <span style="color: #ffb000;">@username</span>!
+    </div>
+
+    <div class="about-section-wrapper">
+        <div class="about-content-wrapper">
+            <h2 class="about-heading">About PUPQC Gym Reservation</h2>
+            <div class="about-text-container">
+                The PUPQC Gym Reservation is designed to manage the gym reservation system for PUPQC's academic classes.
+                It allows students to reserve specific time slots for gym use, including relevant details such as assigned
+                professors, class sections, and student lists.
+            </div>
+        </div>
+    </div>
+
+    <div class="submit-reservation-banner">
+        Submit your Reservation Now!
+    </div>
+
+    <div class="w-full max-w-4xl px-4 py-8">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <a href="/Users/AddReservationForm" class="icon-button-container">
+                <div class="icon-wrapper">
+                    <i class="fas fa-plus-circle"></i>
+                </div>
+                <span class="icon-text">Add New Reservation</span>
+            </a>
+            <a href="/Users/StudentDashboard" class="icon-button-container">
+                <div class="icon-wrapper">
+                    <i class="fas fa-basketball-ball"></i>
+                </div>
+                <span class="icon-text">Gym Reservations</span>
+            </a>
+            <a href="/Users/UserReservation" class="icon-button-container">
+                <div class="icon-wrapper">
+                    <i class="fas fa-clipboard-list"></i>
+                </div>
+                <span class="icon-text">Your Reservations</span>
+            </a>
+        </div>
+    </div>
+
+    <div id="Reservation Guide" class="guide-section-full-width-wrapper">
+        <div class="guide-section-content-wrapper">
+            <h2 class="guide-section-heading">Iskolar's Reservation Guide</h2>
+            <div class="flex flex-col gap-0.5">
+                <div class="guide-step-container">
+                    <div class="guide-step-text-number">STEP 1</div>
+                    <p class="guide-step-text">Fill out the reservation form. You can find it by pressing the "Add New Reservation" button above.</p>
+                </div>
+                <div class="guide-step-container">
+                    <div class="guide-step-text-number">STEP 2</div>
+                    <p class="guide-step-text">Select your preferred date and time. You check the available date slots in the "Gym Reservations" button above.</p>
+                </div>
+                <div class="guide-step-container">
+                    <div class="guide-step-text-number">STEP 3</div>
+                    <p class="guide-step-text">Submit the form. Check your reservation status in the "Your Reservation" button above.</p>
+                </div>
+                <div class="guide-step-container">
+                    <div class="guide-step-text-number">STEP 4</div>
+                    <p class="guide-step-text">Wait for the approval of the Admin for your reservation before proceeding to the Gym.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // No specific JavaScript needed for this static content.
+    </script>
+}

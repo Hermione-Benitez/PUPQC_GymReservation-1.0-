@@ -1,0 +1,428 @@
+﻿@{
+    ViewData["Title"] = "AdminManage";
+    Layout = "Admin_Layout";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PUPQC Gym Reservation - Requests</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #ffb6b6, #ffc6c6);
+            min-height: 100vh;
+            padding-bottom: 100px;
+            background-image: url(Images/AdminsBG.jpg);
+        }
+
+        .header {
+            background-color: #970c10;
+            color: #ffb000;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+            .header h1 {
+                font-size: 18px;
+                font-weight: bold;
+            }
+
+            .header .star {
+                color: #ffb000;
+                margin-right: 10px;
+            }
+
+        .nav-links {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+            .nav-links a {
+                color: white;
+                text-decoration: none;
+                font-size: 16px;
+                font-weight: bold;
+            }
+
+                .nav-links a:hover {
+                    color: #ffb000;
+                }
+
+                .nav-links a.active {
+                    color: #ffb000;
+                }
+
+        .menu-icon {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        .requests-title {
+            color: #970c10;
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 30px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .requests-card {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+        .tabs-container {
+            display: flex;
+            border-bottom: 1px solid #eee;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 15px 20px;
+            text-align: center;
+            background: #f8f8f8;
+            color: #666;
+            cursor: pointer;
+            font-weight: bold;
+            border: none;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+            .tab:first-child {
+                border-top-left-radius: 15px;
+            }
+
+            .tab.active {
+                background-color: #970c10;
+                color: white;
+            }
+
+            .tab:not(.active):hover {
+                background-color: #eee;
+            }
+
+        .requests-content {
+            padding: 25px;
+            min-height: 300px;
+        }
+
+        .request-item {
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+            .request-item:hover {
+                border-color: #970c10;
+                box-shadow: 0 4px 12px rgba(151, 12, 16, 0.1);
+            }
+
+        .request-header {
+            background-color: #970c10;
+            color: white;
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .request-info {
+            display: flex;
+            gap: 30px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .status-badge {
+            padding: 6px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            color: white;
+        }
+
+        .status-declined {
+            background-color: #970c10;
+        }
+
+        .status-cancelled {
+            background-color: #666;
+        }
+
+        .request-details {
+            padding: 15px 20px;
+            background: #f9f9f9;
+            display: flex;
+            gap: 40px;
+            font-size: 13px;
+        }
+
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .detail-label {
+            font-weight: bold;
+            color: #970c10;
+            font-style: italic;
+            margin-bottom: 3px;
+        }
+
+        .detail-value {
+            color: #333;
+        }
+
+        .footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: #970c10;
+            color: white;
+            padding: 15px 20px;
+            font-size: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .left-section {
+            display: flex;
+            gap: 40px;
+            flex: 1;
+        }
+
+        .developers, .names {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            color: #ffb000;
+        }
+
+        .section-title {
+            font-weight: bold;
+            font-size: 16px;
+            margin-bottom: 3px;
+        }
+
+        .sub_section-title {
+            font-size: 16px;
+            margin-bottom: 3px;
+        }
+
+        .content-text {
+            font-size: 16px;
+            line-height: 1.3;
+            color: white;
+        }
+
+        .contact-section {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 8px;
+        }
+
+        .contact-title {
+            font-weight: bold;
+            font-size: 18px;
+            color: #ffb000;
+            align-self: baseline;
+        }
+
+        .social-icons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .social-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .right-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .gym-box {
+            background-color: rgba(0, 0, 0, 0.1);
+            border: 2px solid #8b4513;
+            border-radius: 8px;
+            padding: 8px 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 100px;
+        }
+
+        .gym-logo {
+            padding: 8px 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 164px;
+            height: 84px;
+            margin-bottom: 2px;
+        }
+
+        @@media (max-width: 788px) {
+            .footer
+
+        {
+            flex-direction: row;
+            gap: 10px;
+            min-width: max-content;
+        }
+
+        .left-section {
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .contact-section {
+            align-items: column;
+        }
+
+        }
+
+        .logo {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 64px;
+            height: 64px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2 class="requests-title">Requests</h2>
+
+        <div class="requests-card">
+            <div class="tabs-container">
+                <button class="tab" onclick="switchTab('approved')">Approved</button>
+                <button class="tab" onclick="switchTab('pending')">Pending</button>
+                <button class="tab active" onclick="switchTab('cancelled')">Cancelled/Declined</button>
+            </div>
+
+            <div class="requests-content">
+                <div id="approved-content" class="tab-content" style="display: none;">
+                    <div class="empty-state">No approved requests found.</div>
+                </div>
+
+                <div id="pending-content" class="tab-content" style="display: none;">
+                    <div class="empty-state">No pending requests found.</div>
+                </div>
+
+                <div id="cancelled-content" class="tab-content">
+                    <div class="request-item">
+                        <div class="request-header">
+                            <div class="request-info">
+                                <span>Date: May 1, 2025</span>
+                                <span>Time: 10:30AM - 11:00AM</span>
+                            </div>
+                            <div class="status-badge status-declined">DECLINED</div>
+                        </div>
+                        <div class="request-details">
+                            <div class="detail-item">
+                                <span class="detail-label">Category:</span>
+                                <span class="detail-value">Class</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Course/Year/Section:</span>
+                                <span class="detail-value">BSIT 2-2</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="request-item">
+                        <div class="request-header">
+                            <div class="request-info">
+                                <span>Date: May 2, 2025</span>
+                                <span>Time: 10:30AM - 11:00AM</span>
+                            </div>
+                            <div class="status-badge status-cancelled">CANCELLED</div>
+                        </div>
+                        <div class="request-details">
+                            <div class="detail-item">
+                                <span class="detail-label">Category:</span>
+                                <span class="detail-value">Org</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Course/Year/Section:</span>
+                                <span class="detail-value">BSIT 2-2</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function switchTab(tabName) {
+            // Hide all tab content
+            const tabContents = document.querySelectorAll('.tab-content');
+            tabContents.forEach(content => content.style.display = 'none');
+
+            // Remove active class from all tabs
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => tab.classList.remove('active'));
+
+            // Show selected tab content
+            document.getElementById(tabName + '-content').style.display = 'block';
+
+            // Add active class to clicked tab
+            event.target.classList.add('active');
+        }
+
+        // Add click event listeners to request items for interactivity
+        document.querySelectorAll('.request-item').forEach(item => {
+            item.addEventListener('click', function() {
+                this.style.transform = 'scale(0.98)';
+                setTimeout(() => {
+                    this.style.transform = 'scale(1)';
+                }, 150);
+            });
+        });
+    </script>
+</body>
+</html>

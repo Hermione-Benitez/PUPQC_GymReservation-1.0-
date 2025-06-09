@@ -1,0 +1,238 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - AYOKONA</title>
+
+    <style>
+        /* Reset and base */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Montserrat', Arial, sans-serif;
+            background-color: #f5f3f0;
+            background-image: url('Images/Login.jpg');
+            background-repeat: no-repeat;
+            background-size: cover;
+            background-position: center center;
+            min-height: 100vh;
+        }
+
+        /* Navbar */
+        .top-nav {
+            background-color: #8B2C1B;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #8B2C1B;
+        }
+
+        .navbar-brand img.logo-img {
+            height: 40px;
+            width: auto;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 30px;
+        }
+
+            .nav-links a {
+                color: #ffffff;
+                text-decoration: none;
+                font-size: 16px;
+                font-weight: 500;
+            }
+
+                .nav-links a:hover {
+                    color: #ffb000;
+                }
+
+                .nav-links a.active,
+                .nav-links a.selected {
+                    color: #ffb000;
+                    font-weight: 600;
+                }
+
+        /* Main container */
+        .main-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: calc(100vh - 80px);
+            padding: 70px;
+        }
+
+        /* Title container */
+        .title-container {
+            background-color: #970c10;
+            color: white;
+            padding: 20px 40px;
+            border-radius: 10px;
+            margin-bottom: 60px;
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+            .title-container .title {
+                color: white;
+                font-size: 48px;
+                font-weight: bold;
+                margin: 0;
+                letter-spacing: 1px;
+                font-family: 'Montserrat', Arial, sans-serif;
+            }
+
+        /* Circle image container */
+        .circle-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 60px;
+        }
+
+        .circle-img {
+            width: 220px; /* Increased size */
+            height: 220px;
+            border-radius: 50%;
+            object-fit: contain;
+            display: block;
+        }
+
+        /* Buttons */
+        .button-container {
+            display: flex;
+            gap: 300px;
+            align-items: center;
+        }
+
+        .user-button {
+            background-color: #8B2C1B;
+            color: white;
+            border: none;
+            padding: 20px 50px;
+            font-size: 32px;
+            font-weight: bold;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 200px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-family: 'Montserrat', Arial, sans-serif;
+        }
+
+            .user-button:hover {
+                background-color: #6B1F15;
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(139, 44, 27, 0.3);
+            }
+
+            .user-button:active {
+                transform: translateY(0);
+            }
+
+        /* Responsive styles */
+        @@media (max-width: 768px) {
+            .title-container .title
+
+        {
+            font-size: 36px;
+            margin-bottom: 40px;
+        }
+
+        .circle-container .circle-img {
+            width: 200px;
+            height: 200px;
+        }
+
+        .button-container {
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .user-button {
+            font-size: 24px;
+            padding: 15px 40px;
+            min-width: 180px;
+        }
+
+        .nav-links {
+            gap: 20px;
+        }
+
+        .top-nav {
+            padding: 15px 20px;
+        }
+
+        }
+
+        @@media (max-width: 480px) {
+            .title-container .title
+
+        {
+            font-size: 28px;
+        }
+
+        .circle-container .circle-img {
+            width: 200px;
+            height: 200px;
+            border: 5px solid red;
+        }
+
+        .user-button {
+            font-size: 20px;
+            padding: 12px 30px;
+            min-width: 150px;
+        }
+
+        }
+    </style>
+
+    <!-- Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+    <!-- Main Content -->
+    <div class="main-container">
+        <div class="title-container">
+            <h1 class="title">PUPQC Gym Reservation</h1>
+        </div>
+
+        <div class="circle-container">
+            <img src="~/Images/MainLogo.png" alt="Circle Image" class="circle-img" />
+        </div>
+
+        <div class="button-container">
+            <a class="user-button" asp-controller="Home" asp-action="StudentLogin">Student</a>
+            <a class="user-button" asp-controller="Admin" asp-action="AdminLogin">Admin</a>
+        </div>
+    </div>
+
+    <script>
+        // Button hover animation
+        document.querySelectorAll('.user-button').forEach(button => {
+            button.addEventListener('mouseenter', function () {
+                this.style.transform = 'translateY(-3px)';
+            });
+
+            button.addEventListener('mouseleave', function () {
+                this.style.transform = 'translateY(0)';
+            });
+        });
+    </script>
+</body>
+</html>
