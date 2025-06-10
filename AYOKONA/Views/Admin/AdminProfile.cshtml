@@ -1,13 +1,15 @@
-﻿@{
+﻿@model AYOKONA.Models.AdminProfileViewModel
+
+@{
     ViewData["Title"] = "AdminProfile";
     Layout = "Admin_Layout";
 }
 
 
 <div class="header-section">
-    <div class="profile-avatar">RL</div>
+    <div class="profile-avatar">@Model.FullName?[0]</div>
     <div class="profile-header-info">
-        <h1>Rey Lauron</h1>
+        <h1>@Model.FullName</h1>
         <p>Admin</p>
     </div>
     <div class="profile-actions">
@@ -26,31 +28,19 @@
             <div class="personal-info-content">
                 <div class="info-item">
                     <div class="info-label">Full Name</div>
-                    <div class="info-value">Rey Lauron</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Employee ID</div>
-                    <div class="info-value">EMP-2023-0045</div>
+                    <div class="info-value">@Model.FullName</div>
                 </div>
                 <div class="info-item">
                     <div class="info-label">Department</div>
-                    <div class="info-value">Physical Education</div>
+                    <div class="info-value">@Model.Department</div>
                 </div>
                 <div class="info-item">
                     <div class="info-label">Position</div>
-                    <div class="info-value">Gym Administrator</div>
+                    <div class="info-value">@Model.Position</div>
                 </div>
                 <div class="info-item">
                     <div class="info-label">Email</div>
-                    <div class="info-value">reylauron@pup.edu.ph</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Phone Number</div>
-                    <div class="info-value">+63 912 345 6789</div>
-                </div>
-                <div class="info-item" style="grid-column: 1 / -1;">
-                    <div class="info-label">Address</div>
-                    <div class="info-value">Diyan lang sa tabi tabi street</div>
+                    <div class="info-value">@Model.Email</div>
                 </div>
             </div>
         </div>
@@ -71,7 +61,7 @@
                 </div>
                 <div class="info-item">
                     <div class="info-label">Campus</div>
-                    <div class="info-value">PUP Quezon City</div>
+                    <div class="info-value">@Model.Campus</div>
                 </div>
             </div>
         </div>
