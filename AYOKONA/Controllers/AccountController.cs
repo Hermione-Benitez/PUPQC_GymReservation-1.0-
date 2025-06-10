@@ -42,7 +42,8 @@ namespace AYOKONA.Controllers
             var admin = new AdminAccount
             {
                 Name = model.Name, // You may want to add a Name field to your view/model for proper admin naming
-                Email = model.Email,  
+                Email = model.Email, 
+                PasswordHash = model.GetHashedPassword() // Use the method to hash the password
             };
 
             _context.AdminAccounts.Add(admin);
