@@ -4,233 +4,269 @@
     ViewData["Title"] = "Register";
 }
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@ViewData["Title"]</title>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet" />
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Montserrat', sans-serif;
-            background-color: #f5f5f5;
-            min-height: 100vh;
-            display: flex;
-        }
-
-        .left-panel {
-            background-color: white;
-            padding: 40px 30px;
-            width: 100%;
-            max-width: 450px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
-
-        .logo {
-            width: 80px;
-            height: 80px;
-            object-fit: contain;
-            margin-bottom: 10px;
-        }
-
-        .section-title {
-            color: #8B0000;
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-
-        .main-title {
-            font-size: 28px;
-            font-weight: 700;
-            color: #333;
-            margin-bottom: 20px;
-        }
-
-        .welcome {
-            font-weight: 600;
-            margin-bottom: 5px;
-        }
-
-        .instruction {
-            margin-bottom: 25px;
-            font-size: 14px;
-            color: #555;
-        }
-
-        form {
-            width: 100%;
-        }
-
-        .form-group {
-            margin-bottom: 18px;
-        }
-
-            .form-group label {
-                font-weight: 600;
-                margin-bottom: 5px;
-                display: block;
-                color: #8B0000;
-            }
-
-            .form-group input {
-                width: 100%;
-                padding: 10px 12px;
-                border: 1.5px solid #ccc;
-                border-radius: 6px;
-                font-size: 14px;
-            }
-
-                .form-group input:focus {
-                    border-color: #8B0000;
-                    outline: none;
-                }
-
-        .input-group {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-            .input-group button {
-                padding: 8px 10px;
-                background-color: #8B0000;
-                color: #fff;
-                border: none;
-                border-radius: 5px;
-                font-size: 13px;
-                cursor: pointer;
-            }
-
-        .register-button {
-            width: 100%;
-            background-color: #8B0000;
-            color: white;
-            border: none;
-            padding: 14px;
-            font-size: 16px;
-            font-weight: 600;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-            margin-top: 20px;
-        }
-
-            .register-button:hover {
-                background-color: #6a0000;
-            }
-
-        .text-danger {
-            color: red;
-            font-size: 13px;
-        }
-
-        .right-panel {
-            flex: 1;
-            background-color: #8B0000;
-            display: none;
-        }
-
-        @@media (min-width: 768px) {
-            .right-panel
-
-        {
-            display: block;
-        }
-
-        body {
-            flex-direction: row;
-        }
-
-        }
-    </style>
-</head>
-<body>
-
-    <div class="left-panel">
+<div class="register-outer-container">
+    <div class="register-container">
         <img src="~/Images/MainLogo.png" alt="Logo" class="logo" />
-        <div class="section-title">STUDENTS</div>
-        <div class="main-title">Gym Reservation</div>
-        <div class="welcome">Welcome to PUPQC Gym Reservation Portal</div>
-        <div class="instruction">Fill out your credentials below to register.</div>
+        <div class="main-title">Student Registration</div>
+        <div class="welcome">Welcome! Please fill out your credentials below.</div>
+        <div class="instruction">All fields are required for registration.</div>
 
-        <form asp-action="Register">
+        <form asp-action="Register" autocomplete="off">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
-            <div class="form-group">
-                <label asp-for="Name"></label>
-                <input asp-for="Name" />
-                <span asp-validation-for="Name" class="text-danger"></span>
-            </div>
-
-            <div class="form-group">
-                <label asp-for="StudentNumber"></label>
-                <input asp-for="StudentNumber" />
-                <span asp-validation-for="StudentNumber" class="text-danger"></span>
-            </div>
-
-            <div class="form-group">
-                <label asp-for="Section"></label>
-                <input asp-for="Section" />
-                <span asp-validation-for="Section" class="text-danger"></span>
-            </div>
-
-            <div class="form-group">
-                <label asp-for="Email"></label>
-                <input asp-for="Email" />
-                <span asp-validation-for="Email" class="text-danger"></span>
-            </div>
-
-            <div class="form-group">
-                <label asp-for="PasswordHash"></label>
-                <div class="input-group">
-                    <input asp-for="PasswordHash" id="PasswordHash" type="password" />
-                    <button type="button" onclick="togglePassword('PasswordHash', this)">Show</button>
+            <div class="form-row">
+                <div class="form-group">
+                    <label asp-for="Name">Full Name</label>
+                    <input asp-for="Name" placeholder="e.g. Juan Dela Cruz" />
+                    <span asp-validation-for="Name" class="text-danger"></span>
                 </div>
-                <span asp-validation-for="PasswordHash" class="text-danger"></span>
+
+                <div class="form-group">
+                    <label asp-for="StudentNumber">Student Number</label>
+                    <input asp-for="StudentNumber" placeholder="2025-XXXXX-CM-0" />
+                    <span asp-validation-for="StudentNumber" class="text-danger"></span>
+                </div>
             </div>
 
-            <div class="form-group">
-                <label asp-for="ConfirmPassword"></label>
-                <div class="input-group">
-                    <input asp-for="ConfirmPassword" id="ConfirmPassword" type="password" />
-                    <button type="button" onclick="togglePassword('ConfirmPassword', this)">Show</button>
+            <div class="form-row">
+                <div class="form-group">
+                    <label asp-for="Section">Section</label>
+                    <input asp-for="Section" placeholder="e.g. BSIT 2-2" />
+                    <span asp-validation-for="Section" class="text-danger"></span>
                 </div>
-                <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+
+                <div class="form-group">
+                    <label asp-for="Email">Email</label>
+                    <input asp-for="Email" type="email" placeholder="e.g. juandelacruz@email.com" />
+                    <span asp-validation-for="Email" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label asp-for="PasswordHash">Password</label>
+                    <div class="input-group" style="display: flex; align-items: center;">
+                        <input asp-for="PasswordHash" id="PasswordHash" type="password" placeholder="Enter password" style="flex:1;" />
+                        <button type="button" tabindex="-1" onclick="togglePassword('PasswordHash', this)" style="margin-left:8px; white-space:nowrap;">Show</button>
+                    </div>
+                    <span asp-validation-for="PasswordHash" class="text-danger"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="ConfirmPassword">Confirm Password</label>
+                    <div class="input-group" style="display: flex; align-items: center;">
+                        <input asp-for="ConfirmPassword" id="ConfirmPassword" type="password" placeholder="Re-enter password" style="flex:1;" />
+                        <button type="button" tabindex="-1" onclick="togglePassword('ConfirmPassword', this)" style="margin-left:8px; white-space:nowrap;">Show</button>
+                    </div>
+                    <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+                </div>
             </div>
 
             <button type="submit" class="register-button">Register</button>
         </form>
+
+        <div class="login-link">
+            Already have an account? <a asp-action="StudentLogin" asp-controller="Account">Login here</a>
+        </div>
     </div>
-
-    <div class="right-panel">
-        <!-- Background panel, visible only on wider screens -->
-    </div>
-
-    <script>
-        function togglePassword(fieldId, btn) {
-            const input = document.getElementById(fieldId);
-            if (input.type === "password") {
-                input.type = "text";
-                btn.textContent = "Hide";
-            } else {
-                input.type = "password";
-                btn.textContent = "Show";
-            }
-        }
-    </script>
-
-</body>
-</html>
+</div>
 
 @section Scripts {
     @await Html.PartialAsync("_ValidationScriptsPartial")
 }
+
+<style>
+    body {
+        font-family: 'Montserrat', Arial, sans-serif;
+        background-color: #970c10;
+    }
+
+    .register-outer-container {
+        min-height: calc(100vh - 120px); /* Adjust 120px to your header+footer height */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 40px 0;
+    }
+
+    .register-container {
+        background: #fff;
+        border-radius: 16px;
+        box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        max-width: 700px;
+        padding: 48px 32px;
+        box-sizing: border-box;
+        overflow: hidden;
+    }
+
+    .logo {
+        width: 80px;
+        height: 80px;
+        object-fit: contain;
+        margin: 0 auto 12px auto;
+        display: block;
+    }
+
+    .main-title {
+        font-size: 28px;
+        font-weight: 700;
+        color: #8B0000;
+        text-align: center;
+        margin-bottom: 10px;
+    }
+
+    .welcome {
+        font-weight: 600;
+        text-align: center;
+        margin-bottom: 2px;
+    }
+
+    .instruction {
+        margin-bottom: 18px;
+        font-size: 14px;
+        color: #555;
+        text-align: center;
+    }
+
+    form {
+        width: 100%;
+    }
+
+    .form-row {
+        display: flex;
+        gap: 32px;
+        flex-wrap: wrap;
+    }
+
+    .form-group {
+        flex: 1 1 300px;
+        min-width: 220px;
+        margin-bottom: 18px;
+    }
+
+        .form-group label {
+            font-weight: 600;
+            margin-bottom: 5px;
+            display: block;
+            color: #8B0000;
+            font-size: 14px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1.5px solid #ccc;
+            border-radius: 6px;
+            font-size: 15px;
+            transition: border-color 0.2s;
+        }
+
+            .form-group input:focus {
+                border-color: #8B0000;
+                outline: none;
+            }
+
+    .input-group {
+        display: flex;
+        align-items: center;
+        gap: 0;
+    }
+
+        .input-group input[type="password"],
+        .input-group input[type="text"] {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .input-group button {
+            margin-left: 8px;
+            padding: 8px 12px;
+            background-color: #8B0000;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            white-space: nowrap;
+        }
+
+            .input-group button:hover {
+                background-color: #6a0000;
+            }
+
+    .register-button {
+        width: 100%;
+        background-color: #8B0000;
+        color: white;
+        border: none;
+        padding: 15px;
+        font-size: 17px;
+        font-weight: 700;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+        margin-top: 10px;
+    }
+
+        .register-button:hover {
+            background-color: #6a0000;
+        }
+
+    .text-danger {
+        color: #d32f2f;
+        font-size: 13px;
+        margin-top: 2px;
+        display: block;
+    }
+
+    .login-link {
+        text-align: center;
+        margin-top: 18px;
+        font-size: 14px;
+    }
+
+        .login-link a {
+            color: #8B0000;
+            text-decoration: underline;
+            font-weight: 600;
+        }
+
+    @@media (max-width: 900px) {
+        .register-container
+
+    {
+        max-width: 98vw;
+        padding: 32px 8vw 24px 8vw;
+    }
+
+    .form-row {
+        flex-direction: column;
+        gap: 0;
+    }
+
+    }
+    @@media (max-width: 600px) {
+        .register-container
+
+    {
+        padding: 18px 2vw 12px 2vw;
+    }
+
+    }
+</style>
+<script>
+    function togglePassword(fieldId, btn) {
+        const input = document.getElementById(fieldId);
+        if (input.type === "password") {
+            input.type = "text";
+            btn.textContent = "Hide";
+        } else {
+            input.type = "password";
+            btn.textContent = "Show";
+        }
+    }
+</script>

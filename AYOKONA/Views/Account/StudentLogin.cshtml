@@ -41,8 +41,18 @@
             color: #8B0000;
             text-align: center;
         }
+
+    .students-label {
+        font-weight: 900 !important;
+        letter-spacing: 1px;
+        font-size: 1.1rem;
+    }
+
     .control-label {
-        text-align = left;
+        text-align: left !important;
+        display: block;
+        width: 100%;
+        margin-bottom: 0.25rem;
     }
 
     .form-control {
@@ -86,16 +96,13 @@
     }
 
     @@media (max-width: 768px) {
-        .main-container
+        .main-container {
+            flex-direction: column;
+        }
 
-    {
-        flex-direction: column;
-    }
-
-    .image-section {
-        display: none;
-    }
-
+        .image-section {
+            display: none;
+        }
     }
 </style>
 
@@ -104,7 +111,7 @@
     <div class="login-section">
         <div class="login-card text-center">
             <img src="~/Images/MainLogo.png" alt="PUP Logo" class="pup-logo" />
-            <h6 class="text-danger font-weight-bold">STUDENTS</h6>
+            <h6 class="text-danger students-label">STUDENTS</h6>
             <h2>Gym Reservation</h2>
             <p class="font-weight-bold">Welcome to PUPQC Gym Reservation Portal</p>
             <p>Enter your credentials below</p>
@@ -112,13 +119,13 @@
             <form asp-action="StudentLogin" asp-controller="Users" method="post">
                 <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
-                <div class="form-group">
+                <div class="form-group text-left">
                     <label asp-for="StudentNumber" class="control-label">Student Number</label>
-                    <input asp-for="StudentNumber" class="form-control" placeholder="Enter your student number" />
+                    <input asp-for="StudentNumber" class="form-control" placeholder="2025-XXXXX-CM-0" />
                     <span asp-validation-for="StudentNumber" class="text-danger"></span>
                 </div>
 
-                <div class="form-group">
+                <div class="form-group text-left">
                     <label asp-for="Password" class="control-label">Password</label>
                     <input asp-for="Password" class="form-control" type="password" placeholder="Enter your password" />
                     <span asp-validation-for="Password" class="text-danger"></span>

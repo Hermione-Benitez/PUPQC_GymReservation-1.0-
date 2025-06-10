@@ -2,117 +2,39 @@
 
 @{
     ViewData["Title"] = "User Profile";
+    Layout = "Students_Layout";
 }
 
-    <style>
-    /* Base Reset */
-    * {
+<style>
+    html, body {
         margin: 0;
         padding: 0;
+        height: 100%;
+        width: 100%;
         box-sizing: border-box;
     }
 
-    body {
-        font-family: 'Segoe UI', Roboto, sans-serif;
-        background-color: #f2f4f8;
-        height: 80vh;
+    .user-profile-outer {
+        min-height: calc(100vh - 120px); /* Adjust 120px to match your header+footer height */
         display: flex;
-        color: #333;
-    }
-
-    /* Sidebar */
-    .sidebar {
-        position: fixed;
-        left: -250px;
-        top: 0;
-        width: 250px;
-        height: 100vh;
-        background: #861212;
-        transition: left 0.3s ease;
-        z-index: 1000;
-        box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
-    }
-
-        .sidebar.show {
-            left: 0;
-        }
-
-    .sidebar-trigger {
-        position: fixed;
-        left: 0;
-        top: 0;
-        width: 10px;
-        height: 100vh;
-        cursor: pointer;
-        z-index: 999;
-    }
-
-    /* Sidebar Header */
-    .sidebar-header {
-        padding: 20px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    }
-
-        .sidebar-header h1 {
-            color: white;
-            font-size: 18px;
-            font-weight: 700;
-        }
-
-    /* Sidebar Menu */
-    .sidebar-menu a {
-        display: flex;
-        align-items: center;
-        padding: 12px 24px;
-        color: rgba(255, 255, 255, 0.85);
-        text-decoration: none;
-        font-size: 15px;
-        transition: 0.2s;
-        border-left: 4px solid transparent;
-    }
-
-        .sidebar-menu a:hover,
-        .sidebar-menu a.active {
-            background-color: rgba(255, 255, 255, 0.1);
-            color: #fff;
-            border-left-color: #ffd700;
-        }
-
-    .sidebar-menu .icon {
-        margin-right: 12px;
-        font-size: 18px;
-    }
-
-    /* Logout */
-    .sidebar-logout {
-        position: absolute;
-        bottom: 20px;
+        flex-direction: column;
+        justify-content: flex-start;
         width: 100%;
+        box-sizing: border-box;
     }
 
-        .sidebar-logout a {
-            display: flex;
-            align-items: center;
-            padding: 12px 24px;
-            color: rgba(255, 255, 255, 0.8);
-            transition: 0.2s;
-        }
-
-            .sidebar-logout a:hover {
-                background: rgba(255, 255, 255, 0.1);
-                color: white;
-            }
-
-    /* Main Content */
     .main-content {
-        flex: 1;
         margin-left: 0;
         transition: margin-left 0.3s ease;
+        flex: 1 0 auto;
+        width: 100%;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
     }
 
-    /* Profile Header */
     .profile-header {
-        background: linear-gradient(135deg, #7b1e1e, #5a0d0d);
+        background: linear-gradient(135deg, #ffb000, #e09d06);
         padding: 30px;
         display: flex;
         align-items: center;
@@ -148,7 +70,6 @@
         gap: 10px;
     }
 
-    /* Buttons */
     .btn {
         padding: 8px 16px;
         font-size: 13px;
@@ -173,11 +94,13 @@
         color: white;
     }
 
-    /* Content Area */
     .content-area {
         padding: 30px;
         background-color: #f9f9fb;
-        min-height: calc(100vh - 200px);
+        flex: 1 0 auto;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
     }
 
     .content-grid {
@@ -187,12 +110,14 @@
         margin-bottom: 30px;
     }
 
-    /* Info Section */
     .info-section {
         background: white;
         padding: 24px;
         border-radius: 10px;
         box-shadow: 0 1px 6px rgba(0, 0, 0, 0.08);
+        display: flex;
+        flex-direction: column;
+        height: 100%;
     }
 
     .section-title {
@@ -244,7 +169,6 @@
         font-weight: 500;
     }
 
-    /* Organizations */
     .organization-item {
         display: flex;
         align-items: center;
@@ -283,7 +207,6 @@
         color: white;
     }
 
-    /* Add Organization Button */
     .add-org-btn {
         width: 100%;
         border: 2px dashed #ccc;
@@ -302,7 +225,6 @@
             color: #28a745;
         }
 
-    /* Contact Section */
     .contact-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
@@ -330,71 +252,112 @@
             color: white;
         }
 
-    </style>
+    @@media (max-width: 900px) {
+        .content-area
+
+    {
+        padding: 20px;
+    }
+
+    .content-grid {
+        gap: 16px;
+    }
+
+    .info-grid, .contact-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    }
+
+    @@media (max-width: 600px) {
+        .main-content
+
+    {
+        padding: 0;
+    }
+
+    .content-area {
+        padding: 10px;
+    }
+
+    .profile-header {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 16px;
+    }
+
+    .profile-info {
+        margin-left: 0 !important;
+        margin-top: 10px;
+    }
+
+    }
+</style>
 
 
-<div class="main-content">
-    <!-- Header -->
-    <div class="profile-header">
-        <div class="profile-avatar">
-            @Model.FullName?[0]
-        </div>
-        <div class="profile-info" style="margin-left: 20px;">
-            <h1>@Model.FullName</h1>
-            <div class="role">@Model.Role</div>
-            <div class="profile-buttons">
-                <button class="btn btn-edit">Edit Profile</button>
-            </div>
-        </div>
+<div class="profile-header">
+    <div class="profile-avatar">
+        @Model.FullName?[0]
     </div>
-
-    <!-- Content -->
-    <div class="content-area">
-        <div class="content-grid">
-
-            <!-- Personal Info -->
-            <div class="info-section">
-                <div class="section-title personal">Personal Information</div>
-                <div class="info-grid">
-                    <div class="info-field">
-                        <div class="info-label">Full Name</div>
-                        <div class="info-value">@Model.FullName</div>
-                    </div>
-                    <div class="info-field">
-                        <div class="info-label">Student Number</div>
-                        <div class="info-value">@Model.StudentNumber</div>
-                    </div>
-                    <div class="info-field">
-                        <div class="info-label">Section</div>
-                        <div class="info-value">@Model.Section</div>
-                    </div>
-                    <div class="info-field">
-                        <div class="info-label">Campus</div>
-                        <div class="info-value">@Model.Campus</div>
-                    </div>
-                    <div class="info-field">
-                        <div class="info-label">Role</div>
-                        <div class="info-value">@Model.Role</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Contact Info -->
-            <div class="info-section">
-                <div class="section-title contact">Contact Information</div>
-                <div class="contact-grid">
-                    <div class="info-field single-column">
-                        <div class="info-label">Email</div>
-                        <div class="info-value">@Model.Email</div>
-                    </div>
-                </div>
-                <button class="update-btn">Update Contact Info</button>
-            </div>
-
+    <div class="profile-info" style="margin-left: 20px;">
+        <h1>@Model.FullName</h1>
+        <div class="role">@Model.Role</div>
+        <div class="profile-buttons">
+            <button class="btn btn-edit">Edit Profile</button>
         </div>
     </div>
 </div>
 
+<!-- Content -->
+<div class="content-area">
+    <div class="content-grid">
+
+        <!-- Personal Info -->
+        <div class="info-section">
+            <div class="section-title personal">Personal Information</div>
+            <div class="info-grid">
+                <div class="info-field">
+                    <div class="info-label">Full Name</div>
+                    <div class="info-value">@Model.FullName</div>
+                </div>
+                <div class="info-field">
+                    <div class="info-label">Student Number</div>
+                    <div class="info-value">@Model.StudentNumber</div>
+                </div>
+                <div class="info-field">
+                    <div class="info-label">Section</div>
+                    <div class="info-value">@Model.Section</div>
+                </div>
+                <div class="info-field">
+                    <div class="info-label">Campus</div>
+                    <div class="info-value">@Model.Campus</div>
+                </div>
+                <div class="info-field">
+                    <div class="info-label">Role</div>
+                    <div class="info-value">@Model.Role</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contact Info -->
+        <div class="info-section">
+            <div class="section-title contact">Contact Information</div>
+            <div class="contact-grid">
+                <div class="info-field single-column">
+                    <div class="info-label">Email</div>
+                    <div class="info-value">@Model.Email</div>
+                </div>
+            </div>
+            <button class="update-btn">Update Contact Info</button>
+        </div>
+
+    </div>
+</div>
+
+
 @section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
 }
