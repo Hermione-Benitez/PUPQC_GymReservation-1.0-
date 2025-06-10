@@ -18,9 +18,17 @@ namespace AYOKONA.Controllers
         {
             if (User.Identity != null && User.Identity.IsAuthenticated)
             {
-                // Redirect authenticated users to Users/Homepage
+                if (User.IsInRole("Admin"))
+                {
+                    // Redirect to Admin Dashboard
+                    return RedirectToAction("AdminDashboard", "Admin");
+                }
+
+                // Redirect normal authenticated users to their homepage
                 return RedirectToAction("Homepage", "Users");
             }
+
+            // For unauthenticated users
             return View();
         }
 

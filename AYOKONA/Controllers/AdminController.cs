@@ -2,6 +2,7 @@
 using AYOKONA.Models;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 
@@ -22,7 +23,6 @@ namespace AYOKONA.Controllers
             return View();
         }
 
-        // In AdminController.cs
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> AdminLogin(AdminLoginViewModel model)
@@ -58,7 +58,6 @@ namespace AYOKONA.Controllers
                     authProperties);
 
                 TempData["SuccessMessage"] = "Admin login successful!";
-                // This line ensures redirection to AdminDashboard
                 return RedirectToAction("AdminDashboard");
             }
             else
@@ -79,15 +78,85 @@ namespace AYOKONA.Controllers
             return View();
         }
 
+        [Authorize]
+        [Authorize]
         public IActionResult AdminProfile()
         {
-            return View();
+            var email = User.FindFirst(ClaimTypes.Email)?.Value;
+
+            if (string.IsNullOrEmpty(email))
+            {
+                return Unauthorized("Email claim not found.");
+            }
+
+            var admin = _context.AdminAccounts.FirstOrDefault(a => a.Email == email);
+
+            if (admin == null)
+            {
+                return NotFound("Admin profile not found.");
+            }
+
+            var model = new AdminProfileViewModel
+            {
+                FullName = admin.Name,
+                Department = "Physical Education",
+                Position = "Gym Administrator",
+                Email = admin.Email,
+                Campus = "PUP Quezon City",
+                Role = "Student"
+                
+            };
+
+            return View(model); // Pass admin to the view
         }
 
+        [Authorize]
         public IActionResult AdminEditProfile()
         {
-            return View();
+            var email = User.Identity?.Name;
+            var admin = _context.AdminAccounts.FirstOrDefault(a => a.Email == email);
+
+            if (admin == null)
+            {
+                return NotFound("Admin profile not found.");
+            }
+
+            return View(admin);
         }
+
+        /*
+        [Authorize]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult AdminEditProfile(Admin updatedAdmin)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(updatedAdmin);
+            }
+
+            var email = User.Identity.Name;
+            var existingAdmin = _context.Admins.FirstOrDefault(a => a.Email == email);
+
+            if (existingAdmin == null)
+            {
+                return NotFound("Admin profile not found.");
+            }
+
+            /* Update fields
+            existingAdmin.FullName = updatedAdmin.FullName;
+            existingAdmin.Department = updatedAdmin.Department;
+            existingAdmin.Position = updatedAdmin.Position;
+            existingAdmin.PhoneNumber = updatedAdmin.PhoneNumber;
+            existingAdmin.Address = updatedAdmin.Address;
+            existingAdmin.EmploymentStatus = updatedAdmin.EmploymentStatus;
+            existingAdmin.Campus = updatedAdmin.Campus; 
+
+            _context.SaveChanges();
+
+            TempData["SuccessMessage"] = "Profile updated successfully.";
+            return RedirectToAction("AdminProfile");
+        } */
 
         [HttpPost]
         [ValidateAntiForgeryToken]

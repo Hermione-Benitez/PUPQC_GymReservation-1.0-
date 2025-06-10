@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using AYOKONA.Models;
 
 namespace AYOKONA.Entities
@@ -14,5 +14,6 @@ namespace AYOKONA.Entities
         public DbSet<AdminAccount> AdminAccounts { get; set; }
         public DbSet<AYOKONA.Models.AdminLoginViewModel> AdminLoginViewModel { get; set; } = default!;
         public DbSet<AYOKONA.Models.StudentProfileViewModel> StudentProfileViewModel { get; set; } = default!;
+        public DbSet<AYOKONA.Models.AdminRegisterViewModel> AdminRegisterViewModel { get; set; } = default!;
     }
 }

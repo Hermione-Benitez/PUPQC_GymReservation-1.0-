@@ -25,7 +25,7 @@ namespace AYOKONA.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult AdminRegister(AdminLoginViewModel model)
+        public IActionResult AdminRegister(AdminRegisterViewModel model)
         {
             if (!ModelState.IsValid)
             {
@@ -41,16 +41,20 @@ namespace AYOKONA.Controllers
 
             var admin = new AdminAccount
             {
-                Name = model.Email, // You may want to add a Name field to your view/model for proper admin naming
-                Email = model.Email,
-                PasswordHash = model.GetHashedPassword()
+                Name = model.Name, // You may want to add a Name field to your view/model for proper admin naming
+                Email = model.Email,  
             };
 
             _context.AdminAccounts.Add(admin);
             _context.SaveChanges();
 
             TempData["SuccessMessage"] = "Admin registration successful!";
-            return RedirectToAction("AdminRegister");
+            return RedirectToAction("AdminLogin");
+        }
+
+        public IActionResult AdminLogin()
+        {
+            return View("");
         }
 
         [HttpGet]
