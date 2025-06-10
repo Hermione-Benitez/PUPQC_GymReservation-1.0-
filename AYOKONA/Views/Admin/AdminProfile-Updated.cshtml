@@ -127,21 +127,19 @@
                 }
 
         /* Main Content */
-        .main-content {
-            margin-left: 0;
-            transition: margin-left 0.3s ease;
-            min-height: 100vh;
-            background-color: #f5f5f5;
-        }
+
 
         .header-section {
             background-color: #970c10;
-            padding: 30px;
+            padding: 20px;
+            padding-top:20px;
             color: white;
+            height: 150px;
             display: flex;
             align-items: center;
             gap: 20px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            flex-wrap: wrap;
         }
 
         .profile-avatar {
@@ -156,6 +154,12 @@
             color: white;
             font-weight: bold;
             border: 3px solid rgba(255,255,255,0.3);
+            flex-shrink: 0;
+        }
+
+        .profile-header-info {
+            flex: 1;
+            min-width: 200px;
         }
 
         .profile-header-info h1 {
@@ -170,13 +174,16 @@
         }
 
         .profile-actions {
-            margin-left: auto;
+            
             display: flex;
             gap: 12px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            align-items: center;
         }
 
         .btn {
-            padding: 10px 20px;
+            padding: 12px 20px;
             border: none;
             border-radius: 6px;
             font-size: 14px;
@@ -189,6 +196,9 @@
             gap: 8px;
             transform: translateY(0);
             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            white-space: nowrap;
+            min-width: 120px;
+            text-align: center;
         }
 
             .btn:hover {
@@ -411,8 +421,6 @@
             <a href="#" onclick="logout()"><span class="icon">🚪</span> Logout</a>
         </div>
     </div>
-
-    <div class="main-content" id="mainContent">
         <div class="header-section">
             <div class="profile-avatar">RL</div>
             <div class="profile-header-info">
