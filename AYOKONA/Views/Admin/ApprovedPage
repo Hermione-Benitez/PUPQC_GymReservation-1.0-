@@ -1,0 +1,185 @@
+<!--admin approved page NO header and NO footer-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #ffb6b6, #ffc6c6);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+        
+        .request-title {
+            color: #970c10;
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 30px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+        
+        .request-card {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+        
+        .request-header {
+            background-color: #970c10;
+            color: white;
+            padding: 15px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .date-time {
+            font-size: 16px;
+            font-weight: bold;
+        }
+        
+        .sent-time {
+            font-size: 12px;
+            opacity: 0.8;
+            font-style: italic;
+        }
+        
+        .request-body {
+            padding: 25px;
+        }
+        
+        .request-details {
+            margin-bottom: 20px;
+        }
+        
+        .detail-item {
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        
+        .detail-label {
+            font-weight: bold;
+            color: #970c10;
+            display: inline-block;
+            min-width: 140px;
+        }
+        
+        .detail-value {
+            color: #333;
+        }
+        
+        .purpose-section {
+            margin: 20px 0;
+        }
+        
+        .purpose-text {
+            background-color: #f8f8f8;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #970c10;
+            font-size: 14px;
+            line-height: 1.5;
+            color: #444;
+            font-style: italic;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: flex-end;
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+        
+        .btn {
+            padding: 10px 25px;
+            border: none;
+            border-radius: 25px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-approve {
+            background-color: #00bf63;
+            color: white;
+        }
+        
+        .btn-approve:hover {
+            background-color: #00a555;
+            transform: translateY(-2px);
+        }
+        
+        .btn-decline {
+            background-color: #970c10;
+            color: white;
+        }
+        
+        .btn-decline:hover {
+            background-color: #7a0a0d;
+            transform: translateY(-2px);
+        }
+        
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2 class="request-title">Request</h2>
+        
+        <div class="request-card">
+            <div class="request-header">
+                <div class="date-time">Date: May 1, 2025 &nbsp;&nbsp;&nbsp; Time: 10:30 - 11:00AM</div>
+                <div class="sent-time">Sent Apr 28 2025 at 10:06 AM</div>
+            </div>
+            
+            <div class="request-body">
+                <div class="request-details">
+                    <div class="detail-item">
+                        <span class="detail-label">Category:</span>
+                        <span class="detail-value">Class</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Course/Year/Section:</span>
+                        <span class="detail-value">BSIT 2-2</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Professor In-Charge:</span>
+                        <span class="detail-value">Juan Dela Cruz</span>
+                    </div>
+                </div>
+                
+                <div class="purpose-section">
+                    <div class="detail-label" style="margin-bottom: 10px;">Purpose:</div>
+                    <div class="purpose-text">
+                        Lorem ipsum is a dummy or placeholder text commonly used in graphic design, publishing, and web development. Its purpose is to permit a page layout to be designed, independently of the copy that will subsequently populate it, or to demonstrate various fonts of a typeface without meaningful text that could be distracting.
+                    </div>
+                </div>
+                
+                <div class="action-buttons">
+                    <button class="btn btn-approve">Approve</button>
+                    <button class="btn btn-decline">Decline</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
