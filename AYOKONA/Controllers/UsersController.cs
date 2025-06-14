@@ -3,8 +3,11 @@ using AYOKONA.Models;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
-using System.Data;
 using System.Security.Claims;
+using System.Threading.Tasks;
+using System.Linq;
+using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
 
 namespace AYOKONA.Controllers
 {
@@ -18,19 +21,14 @@ namespace AYOKONA.Controllers
         }
 
         [HttpGet]
-        public IActionResult StudentLogin()
-        {
-            return View();
-        }
+        public IActionResult StudentLogin() => View();
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> StudentLogin(StudentLoginViewModel model)
         {
             if (!ModelState.IsValid)
-            {
                 return View(model);
-            }
 
             var hashedPassword = model.GetHashedPassword();
 
@@ -39,22 +37,16 @@ namespace AYOKONA.Controllers
 
             if (user != null)
             {
-                // Only allow users with the "Student" role (or no admin privileges)
-                // If you have a Role property, check it here. Example:
-                // if (user.Role != "Student") { ModelState.AddModelError(...); return View(model); }
-
                 var claims = new List<Claim>
                 {
+                    new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                     new Claim(ClaimTypes.Name, user.Name),
-                    new Claim("Name", user.Name),
+                    new Claim("Section", user.Section),
                     new Claim(ClaimTypes.Role, "Student")
                 };
 
                 var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-                var authProperties = new AuthenticationProperties
-                {
-                    IsPersistent = true
-                };
+                var authProperties = new AuthenticationProperties { IsPersistent = true };
 
                 await HttpContext.SignInAsync(
                     CookieAuthenticationDefaults.AuthenticationScheme,
@@ -64,124 +56,210 @@ namespace AYOKONA.Controllers
                 TempData["SuccessMessage"] = "Login successful!";
                 return RedirectToAction("Homepage");
             }
-            else
-            {
-                ModelState.AddModelError(string.Empty, "Invalid student number or password.");
-                return View(model);
-            }
+
+            ModelState.AddModelError(string.Empty, "Invalid student number or password.");
+            return View(model);
         }
+
         [HttpGet]
-        public IActionResult Homepage()
+        public IActionResult Homepage() => View();
+
+        public IActionResult StudentDashboard() => View("StudentDashboard");
+
+        [HttpGet]
+        public async Task<IActionResult> AddReservationForm()
         {
-            // Optionally set ViewData["Username"] here
-            return View();
-        }
-
-        // Action to display the User Dashboard
-        public IActionResult StudentDashboard()
-        {
-            return View("StudentDashboard");
-        }
-
-        // This action will be hit when the user clicks "Add New Reservation" from the Home page
-        public IActionResult Add()
-        {
-            // Get the logged-in user's name
-            var userName = User.Identity?.Name ?? "Unknown User";
-
-            // Fetch the user from the UserAccounts DbSet
-            var user = _context.UserAccounts.FirstOrDefault(u => u.Name == userName);
-
-            if (user == null)
+            var userAccount = await GetCurrentUserAccountAsync();
+            if (userAccount == null)
             {
-                return NotFound();
+                TempData["ErrorMessage"] = "You must be logged in.";
+                return RedirectToAction("StudentLogin");
             }
 
-            ViewData["Fullname"] = user.Name;
-            ViewData["Section"] = user.Section;
-
-            return View("AddReservationForm");
-        }
-
-        // This action will be hit when the user clicks the "Submit" button on the reservation form
-        [HttpPost]
-        public IActionResult SubmitReservation(IFormCollection form)
-        {
-            var category = form["Category"];
-            var professorInCharge = form["ProfessorInCharge"];
-            var purposeOfUse = form["PurposeOfUse"];
-            var reservationDateString = form["ReservationDate"]; // Date comes as a string (YYYY-MM-DD)
-            var reservationTime = form["ReservationTime"];
-
-            // var userName = form["Name"];
-            // var userSection = form["Section"];
-
-            DateTime reservationDate;
-            if (!DateTime.TryParse(reservationDateString, out reservationDate))
+            var model = new ReservationFormViewModel
             {
-                ModelState.AddModelError("ReservationDate", "Invalid reservation date.");
-                ViewData["Fullname"] = form["Name"];
-                ViewData["Section"] = form["Section"];
-                return View("AddReservationForm");
-            }
-
-            // --- Add your logic here to save the reservation to your database ---
-            /*
-            var newReservation = new YourProjectNamespace.Models.Reservation // Replace with your actual model class path
-            {
-                Category = category,
-                // You might get the Name and Section from the current authenticated user instead of hidden fields
-                // Or use them from the form if the user is allowed to change them
-                Name = form["Name"],
-                Section = form["Section"],
-                ProfessorInCharge = professorInCharge,
-                PurposeOfUse = purposeOfUse,
-                ReservationDate = reservationDate, // The parsed DateTime object
-                TimeSlot = reservationTime,
-                Status = "Pending" // Set initial status (e.g., Pending, Approved, Rejected)
-                // Add any other properties like UserId from your authentication system
+                Name = userAccount.Name,
+                Section = userAccount.Section,
+                ReservationDate = DateTime.Today
             };
 
-            _dbContext.Reservations.Add(newReservation); // Assuming _dbContext is your database context
-            _dbContext.SaveChanges(); // Persist the changes to the database
-            */
-            // --- End database saving logic ---
+            ViewData["Periods"] = await _context.Periods.OrderBy(p => p.StartTime).ToListAsync();
 
-            // After successfully processing and saving, redirect the user
-            TempData["SuccessMessage"] = "Your reservation has been submitted successfully!"; // Optional: message for next page
-            return RedirectToAction("StudentDashboard"); // Redirects to the Dashboard action in this controller
+            // Get all approved requests (date, periodId)
+            var approvedSlots = await _context.Requests
+                .Where(r => r.Status == "approved")
+                .Select(r => new { r.Date, r.PeriodId })
+                .ToListAsync();
+            ViewData["ApprovedSlots"] = approvedSlots;
+
+            // Get all fully booked slots (date, periodId) with 3 or more reservations
+            var fullyBookedSlots = await _context.Reservations
+                .GroupBy(r => new { r.Date, r.PeriodId })
+                .Where(g => g.Count() >= 3)
+                .Select(g => new { g.Key.Date, g.Key.PeriodId })
+                .ToListAsync();
+            ViewData["FullyBookedSlots"] = fullyBookedSlots;
+
+            return View("AddReservationForm", model);
         }
 
-        // Action to display general Gym Reservations (e.g., a calendar of all reservations)
-        public IActionResult AddReservationForm()
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SubmitReservation(ReservationFormViewModel model)
         {
-            return View(); // This will look for Views/User/Reservation.cshtml by convention
-        }
-
-        // Action to display a specific user's reservations
-        // This action would be hit by the "/User/Reservations/My" link from the Home page
-        // You might need to adjust routing or consider using a single 'Reservation' action with parameters
-        // if "Reservation" and "My" are meant to show different views of reservations.
-        // For now, let's assume this displays the *current user's* reservations.
-        public IActionResult UserReservation()
-        {
-            // Logic to fetch reservations specific to the logged-in user
-            return View(); // This will look for Views/User/My.cshtml by convention
-        }
-
-        // Action to display the user's profile
-        public ActionResult UsersProfile()
-        {
-            // Get the logged-in user's name
-            var userName = User.Identity?.Name;
-
-            // Fetch the user from the UserAccounts table
-            var user = _context.UserAccounts.FirstOrDefault(u => u.Name == userName);
-
-            if (user == null)
+            var userAccount = await GetCurrentUserAccountAsync();
+            if (userAccount == null)
             {
-                return NotFound();
+                ModelState.AddModelError("", "You are not logged in.");
+                ViewData["Periods"] = await _context.Periods.OrderBy(p => p.StartTime).ToListAsync();
+                return View("AddReservationForm", model);
             }
+
+            model.Name = userAccount.Name;
+            model.Section = userAccount.Section;
+
+            if (model.Category == "org")
+            {
+                if (string.IsNullOrWhiteSpace(model.OrganizationName))
+                {
+                    ModelState.AddModelError("OrganizationName", "Organization is required when category is 'org'.");
+                }
+            }
+            else if (model.Category == "section")
+            {
+                if (string.IsNullOrWhiteSpace(model.Section))
+                {
+                    ModelState.AddModelError("Section", "Section is required when category is 'section'.");
+                }
+
+                model.OrganizationName = null;
+            }
+            else
+            {
+                ModelState.AddModelError("Category", "Please select a valid category.");
+            }
+
+            if (model.ReservationDate < DateTime.Today)
+            {
+                ModelState.AddModelError("ReservationDate", "Reservation date cannot be in the past.");
+            }
+
+            if (model.PeriodId == 0)
+            {
+                ModelState.AddModelError("PeriodId", "Please select a valid time period.");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                ViewData["Periods"] = await _context.Periods.OrderBy(p => p.StartTime).ToListAsync();
+                return View("AddReservationForm", model);
+            }
+
+            // Updated part: Auto-create group if not found (for section)
+            string groupName = model.Category == "section"
+                ? userAccount.Section?.Trim() ?? ""
+                : model.OrganizationName?.Trim() ?? "";
+
+            var group = await _context.Groups
+                .FirstOrDefaultAsync(g => g.Category == model.Category && g.Name == groupName);
+
+            if (group == null)
+            {
+                if (model.Category == "section" && !string.IsNullOrWhiteSpace(groupName))
+                {
+                    group = new Group
+                    {
+                        Name = groupName,
+                        Category = "section"
+                    };
+                    _context.Groups.Add(group);
+                    await _context.SaveChangesAsync();
+                }
+                else
+                {
+                    ModelState.AddModelError("", $"No matching group found for category '{model.Category}' and name '{groupName}'.");
+                    ViewData["Periods"] = await _context.Periods.OrderBy(p => p.StartTime).ToListAsync();
+                    return View("AddReservationForm", model);
+                }
+            }
+
+            var period = await _context.Periods.FindAsync(model.PeriodId);
+            if (period == null)
+            {
+                ModelState.AddModelError("PeriodId", "Invalid time slot.");
+                ViewData["Periods"] = await _context.Periods.OrderBy(p => p.StartTime).ToListAsync();
+                return View("AddReservationForm", model);
+            }
+
+            // Prevent more than 3 reservations for the same period and date across ALL users
+            var existingReservationsCount = await _context.Reservations
+                .CountAsync(r => r.PeriodId == model.PeriodId && r.Date == model.ReservationDate);
+            if (existingReservationsCount >= 3)
+            {
+                ModelState.AddModelError("", "The selected time slot and date is fully booked.");
+                ViewData["Periods"] = await _context.Periods.OrderBy(p => p.StartTime).ToListAsync();
+                return View("AddReservationForm", model);
+            }
+
+            // Prevent more than 3 reservation attempts per real-time day
+            var today = DateTime.Today;
+            var todayAttempts = await _context.Reservations
+                .CountAsync(r => r.UserId == userAccount.Id && r.CreatedAt.Date == today);
+            if (todayAttempts >= 3)
+            {
+                ModelState.AddModelError("", "You have reached the maximum of 3 reservation attempts for today. Please return tomorrow");
+                ViewData["Periods"] = await _context.Periods.OrderBy(p => p.StartTime).ToListAsync();
+                return View("AddReservationForm", model);
+            }
+
+            var newReservation = new Reservation
+            {
+                UserId = userAccount.Id,
+                GroupId = group.GroupId,
+                PeriodId = period.PeriodId,
+                Date = model.ReservationDate,
+                Purpose = model.PurposeOfUse,
+                ProfInCharge = model.ProfessorInCharge,
+                Status = "ongoing",
+                CreatedAt = DateTime.Now
+            };
+
+            // Add the reservation first
+            _context.Reservations.Add(newReservation);
+            await _context.SaveChangesAsync(); // newReservation.ReservationId is now set
+
+            // Now create the request and link it
+            var newRequest = new Request
+            {
+                UserId = userAccount.Id,
+                GroupId = group.GroupId,
+                PeriodId = period.PeriodId,
+                Date = model.ReservationDate,
+                Purpose = model.PurposeOfUse,
+                ProfInCharge = model.ProfessorInCharge,
+                Status = "pending",
+                CreatedAt = DateTime.Now,
+                ReservationId = newReservation.ReservationId // Link to reservation
+            };
+
+            _context.Requests.Add(newRequest);
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = "Reservation submitted successfully!";
+            return RedirectToAction("StudentDashboard");
+        }
+
+        public IActionResult UserReservation() => View();
+
+        public IActionResult UsersProfile()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId == null)
+                return RedirectToAction("StudentLogin");
+
+            int id = int.Parse(userId);
+            var user = _context.UserAccounts.FirstOrDefault(u => u.Id == id);
+            if (user == null) return NotFound();
 
             var model = new StudentProfileViewModel
             {
@@ -189,17 +267,20 @@ namespace AYOKONA.Controllers
                 Email = user.Email,
                 StudentNumber = user.StudentNumber,
                 Section = user.Section,
-
                 Campus = "PUP Quezon City",
-                Role = "Student",
-                // Set other properties as needed, or leave them default/null
+                Role = "Student"
             };
 
             return View(model);
         }
 
+        private async Task<UserAccount?> GetCurrentUserAccountAsync()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId)) return null;
 
-        // Other user-related actions...
+            int id = int.Parse(userId);
+            return await _context.UserAccounts.FindAsync(id);
+        }
     }
 }
-
