@@ -1,4 +1,6 @@
-﻿@{
+﻿@model AYOKONA.Models.ReservationFormViewModel
+
+@{
     ViewData["Title"] = "Reservation Form";
     Layout = "~/Views/Shared/Students_Layout.cshtml";
 }
@@ -151,6 +153,10 @@
                     background-color: #fff;
                 }
 
+        .hidden {
+            display: none !important;
+        }
+
         @@media (max-width: 768px) {
             .reservation-form-container {
                 padding: 1.5rem;
@@ -206,35 +212,63 @@
         <h2 class="form-heading">Reservation Form</h2>
 
         <div class="reservation-form-container">
-            <form action="/User/SubmitReservation" method="post">
+            <form action="/Users/SubmitReservation" method="post">
+                @* IMPORTANT: Added Anti-Forgery Token for security *@
+                @Html.AntiForgeryToken()
+                @* IMPORTANT: Added to display all server-side validation errors *@
+                <div asp-validation-summary="All" class="text-danger"></div>
+
                 <div class="form-group">
                     <label for="category">Category</label>
                     <select id="category" name="Category" required>
                         <option value="">Select Category</option>
-                        <option value="Academic Class">Academic Class</option>
-                        <option value="Organization">Organization</option>
+                        @* IMPORTANT: Value changed to "section" to match DB constraint. Removed C# selected logic. *@
+                        <option value="section">Academic Class</option>
+                        @* IMPORTANT: Value changed to "org" to match DB constraint. Removed C# selected logic. *@
+                        <option value="org">Organization</option>
                     </select>
+                    @* Added: Validation message for Category field *@
+                    <span asp-validation-for="Category" class="text-danger"></span>
                 </div>
 
                 <div class="form-group-row">
                     <div>
-                        <label for="name">Name <span style="font-weight: normal; font-size: 0.85em;"></span></label>
-                        <input type="text" id="name" name="Name" value="@ViewData["Fullname"]" readonly>
+                        <label for="name">Name <span></span></label>
+                        @* IMPORTANT: Changed to @Model.Name for auto-generation *@
+                        <input type="text" id="name" name="Name" value="@Model.Name" readonly>
                     </div>
-                    <div>
-                        <label for="section">Course / Year / Section <span style="font-weight: normal; font-size: 0.85em;"></span></label>
-                        <input type="text" id="section" name="Section" value="@ViewData["Section"]" readonly>
+
+                    <div id="sectionAcademicGroup">
+                        <label for="sectionAcademic">Course / Year / Section <span></span></label>
+                        @* IMPORTANT: Changed to @Model.Section for auto-generation *@
+                        <input type="text" id="sectionAcademic" name="SectionAcademic" value="@Model.Section" readonly>
+                        @* Added: Validation message for Section (assuming SectionAcademic maps to Model.Section) *@
+                        <span asp-validation-for="Section" class="text-danger"></span>
+                    </div>
+
+                    <div id="organizationGroup" class="hidden">
+                        <label for="organization">Organization</label>
+                        <select id="organization" name="OrganizationName">
+                            <option value="">Select Organization</option>
+                            @* IMPORTANT: Retained dynamic loading via JS. The selected value will be set by JS. *@
+                        </select>
+                        @* Added: Validation message for OrganizationName *@
+                        <span asp-validation-for="OrganizationName" class="text-danger"></span>
                     </div>
                 </div>
 
                 <div class="form-group">
                     <label for="professorInCharge">Professor In-Charge</label>
-                    <input type="text" id="professorInCharge" name="ProfessorInCharge" required>
+                    <input type="text" id="professorInCharge" name="ProfessorInCharge" value="@Model.ProfessorInCharge" required> @* Added value binding *@
+                    @* Added: Validation message for ProfessorInCharge *@
+                    <span asp-validation-for="ProfessorInCharge" class="text-danger"></span>
                 </div>
 
                 <div class="form-group">
                     <label for="purposeOfUse">Purpose of Use</label>
-                    <textarea id="purposeOfUse" name="PurposeOfUse" maxlength="200" required></textarea>
+                    <textarea id="purposeOfUse" name="PurposeOfUse" maxlength="200" required>@Model.PurposeOfUse</textarea> @* Added value binding *@
+                    @* Added: Validation message for PurposeOfUse *@
+                    <span asp-validation-for="PurposeOfUse" class="text-danger"></span>
                     <div class="character-count">
                         <span id="purposeCharCount">0</span>/200 characters
                     </div>
@@ -245,19 +279,26 @@
                     <div class="date-time-group">
                         <div class="form-group">
                             <label for="reservationDate">Date</label>
-                            <input type="date" id="reservationDate" name="ReservationDate" required>
+                            @* IMPORTANT: Added value binding with correct date format *@
+                            <input type="date" id="reservationDate" name="ReservationDate" value="@Model.ReservationDate.ToString("yyyy-MM-dd")" required>
+                            @* Added: Validation message for ReservationDate *@
+                            <span asp-validation-for="ReservationDate" class="text-danger"></span>
                         </div>
                         <div class="form-group">
                             <label for="reservationTime">Time</label>
-                            <select id="reservationTime" name="ReservationTime" required>
+                            @* IMPORTANT: Changed 'name' attribute to PeriodId for robust lookup. Removed C# selected logic. *@
+                            <select id="reservationTime" name="PeriodId" required>
                                 <option value="">Select Time</option>
-                                <option value="7:30 AM - 10:30 AM">7:30 AM - 10:30 AM</option>
-                                <option value="10:30 AM - 1:30 PM">10:30 AM - 1:30 PM</option>
-                                <option value="1:30 PM - 4:30 PM">1:30 PM - 4:30 PM</option>
-                                <option value="4:30 PM - 7:30 PM">4:30 PM - 7:30 PM</option>
-                                <option value="7:30 PM - 8:30 PM">7:30 PM - 8:30 PM</option>
-                                <option value="Whole Day">Whole Day</option>
+                                @* IMPORTANT: Placeholder PeriodIds are used here. You must ensure these match your actual PeriodIds in dbo.Periods. *@
+                                <option value="1">7:30 AM - 10:30 AM</option>
+                                <option value="2">10:30 AM - 1:30 PM</option>
+                                <option value="3">1:30 PM - 4:30 PM</option>
+                                <option value="4">4:30 PM - 7:30 PM</option>
+                                <option value="5">7:30 PM - 8:30 PM</option>
+                                <option value="6">Whole Day</option>
                             </select>
+                            @* Added: Validation message for PeriodId *@
+                            <span asp-validation-for="PeriodId" class="text-danger"></span>
                         </div>
                     </div>
                 </div>
@@ -271,30 +312,115 @@
 </div>
 
 @section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
     <script>
-        // Character counter for Purpose of Use
-        document.addEventListener('DOMContentLoaded', function() {
+        $(document).ready(function() {
+            const categorySelect = $('#category');
+            const sectionAcademicGroup = $('#sectionAcademicGroup');
+            const organizationGroup = $('#organizationGroup');
+            const organizationSelect = $('#organization');
+            const sectionAcademicInput = $('#sectionAcademic');
+
+            const organizationsList = [
+                { id: "byp", name: "BYP" },
+                { id: "cbi", name: "CBI" },
+                { id: "chrs", name: "CHRS" },
+                { id: "col", name: "COL" },
+                { id: "commits", name: "COMMITS" },
+                { id: "domtcs", name: "DOMT.Cs" },
+                { id: "fbto", name: "FBTO" },
+                { id: "jms", name: "JMS" },
+                { id: "kataga", name: "KATAGA" },
+                { id: "musa", name: "MUSA" },
+                { id: "rcy", name: "RCY" },
+                { id: "spas", name: "SPAS" },
+                { id: "srg", name: "SRG" },
+                { id: "ssc", name: "SSC" },
+                { id: "voxnova", name: "VOX NOVA" },
+                { id: "yes", name: "YES" }
+            ];
+
+            function loadOrganizations() {
+                if (organizationSelect.find('option').length > 1) {
+                    return;
+                }
+
+                organizationSelect.empty();
+                organizationSelect.append($('<option>').val('').text('Select Organization'));
+                $.each(organizationsList, function(i, org) {
+                    organizationSelect.append($('<option>').val(org.id).text(org.name));
+                });
+            }
+
+            function updateFormFieldsVisibility() {
+                if (categorySelect.val() === 'org') {
+                    sectionAcademicGroup.addClass('hidden');
+                    sectionAcademicInput.prop('required', false);
+
+                    organizationGroup.removeClass('hidden');
+                    organizationSelect.prop('required', true);
+                    loadOrganizations();
+
+                    const modelOrgName = '@(Model.OrganizationName)';
+                    if (modelOrgName && modelOrgName !== '') {
+                        organizationSelect.find('option').filter(function() {
+                            return $(this).text() === modelOrgName;
+                        }).prop('selected', true);
+                    }
+
+                } else if (categorySelect.val() === 'section') {
+                    sectionAcademicGroup.removeClass('hidden');
+                    sectionAcademicInput.prop('required', true);
+
+                    organizationGroup.addClass('hidden');
+                    organizationSelect.prop('required', false);
+                    organizationSelect.val('');
+                } else {
+                    sectionAcademicGroup.addClass('hidden');
+                    sectionAcademicInput.prop('required', false);
+                    organizationGroup.addClass('hidden');
+                    organizationSelect.prop('required', false);
+                    organizationSelect.val('');
+                }
+            }
+
+            updateFormFieldsVisibility();
+
+            categorySelect.on('change', updateFormFieldsVisibility);
+
+            // Set selected category on load from Model
+            const modelCategory = '@(Model.Category)';
+            if (modelCategory && modelCategory !== '') {
+                categorySelect.val(modelCategory);
+                updateFormFieldsVisibility(); // Re-call to update visibility based on selected category
+            }
+
+            // Set selected time period on load from Model
+            const modelPeriodId = '@(Model.PeriodId)';
+            if (modelPeriodId && modelPeriodId !== '0') {
+                $('#reservationTime').val(modelPeriodId);
+            }
+
             const purposeOfUse = document.getElementById('purposeOfUse');
             const purposeCharCount = document.getElementById('purposeCharCount');
-            const maxLength = purposeOfUse.getAttribute('maxlength');
 
             if (purposeOfUse && purposeCharCount) {
+                purposeCharCount.textContent = purposeOfUse.value.length;
                 purposeOfUse.addEventListener('input', function() {
                     const currentLength = this.value.length;
                     purposeCharCount.textContent = currentLength;
                 });
             }
 
-            // Optional: Set default date to today for convenience
             const today = new Date();
-            const yyyy = today.getFullYear();
-            const mm = String(today.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
+            const WEREW = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
             const dd = String(today.getDate()).padStart(2, '0');
             const todayString = `${yyyy}-${mm}-${dd}`;
 
             const reservationDateInput = document.getElementById('reservationDate');
             if (reservationDateInput) {
-                // Set min date to today to prevent selecting past dates
                 reservationDateInput.setAttribute('min', todayString);
             }
         });

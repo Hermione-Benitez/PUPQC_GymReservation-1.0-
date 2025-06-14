@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using AYOKONA.Models;
+using System.Text.RegularExpressions;
+// using AYOKONA.Models; // Note: This 'using' might be specific to your original setup.
 
 namespace AYOKONA.Entities
 {
@@ -12,8 +13,8 @@ namespace AYOKONA.Entities
 
         public DbSet<UserAccount> UserAccounts { get; set; }
         public DbSet<AdminAccount> AdminAccounts { get; set; }
-        public DbSet<AYOKONA.Models.AdminLoginViewModel> AdminLoginViewModel { get; set; } = default!;
-        public DbSet<AYOKONA.Models.StudentProfileViewModel> StudentProfileViewModel { get; set; } = default!;
-        public DbSet<AYOKONA.Models.AdminRegisterViewModel> AdminRegisterViewModel { get; set; } = default!;
+        public DbSet<Reservation> Reservations { get; set; }
+        public DbSet<Group> Groups { get; set; } // Add this if not already present
+        public DbSet<Period> Periods { get; set; } // Add this if not already present
     }
 }
