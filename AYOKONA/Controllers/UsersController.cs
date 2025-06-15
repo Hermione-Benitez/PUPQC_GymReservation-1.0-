@@ -8,6 +8,8 @@ using System.Threading.Tasks;
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace AYOKONA.Controllers
 {
@@ -18,6 +20,67 @@ namespace AYOKONA.Controllers
         public UsersController(ApplicationDbContext context)
         {
             _context = context;
+        }
+
+        // DTO for updating reservation details
+        public class UpdateReservationViewModel
+        {
+            public int ReservationId { get; set; }
+            public string Purpose { get; set; }
+            public string ProfInCharge { get; set; }
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateReservation([FromBody] UpdateReservationViewModel model)
+        {
+            var userAccount = await GetCurrentUserAccountAsync();
+            if (userAccount == null)
+            {
+                return Json(new { success = false, message = "Not authenticated." });
+            }
+
+            var reservation = await _context.Reservations
+                .Where(r => r.ReservationId == model.ReservationId && r.UserId == userAccount.Id)
+                .FirstOrDefaultAsync();
+
+            if (reservation == null)
+            {
+                return Json(new { success = false, message = "Reservation not found or you don't have permission to edit it." });
+            }
+
+            // Only allow editing for 'ongoing' reservations
+            if (reservation.Status != "ongoing")
+            {
+                return Json(new { success = false, message = "Only ongoing reservations can be edited." });
+            }
+
+            // Update reservation details
+            reservation.Purpose = model.Purpose;
+            reservation.ProfInCharge = model.ProfInCharge;
+
+            try
+            {
+                // Find and update the corresponding request
+                var request = await _context.Requests
+                    .Where(r => r.ReservationId == reservation.ReservationId)
+                    .FirstOrDefaultAsync();
+
+                if (request != null)
+                {
+                    request.Purpose = model.Purpose;
+                    request.ProfInCharge = model.ProfInCharge;
+                }
+
+                await _context.SaveChangesAsync();
+                return Json(new { success = true, message = "Reservation and request updated successfully." });
+            }
+            catch (Exception ex)
+            {
+                // Log the exception (e.g., using a logging framework)
+                Console.WriteLine($"Error updating reservation and request: {ex.Message}");
+                return Json(new { success = false, message = "Error updating reservation and request." });
+            }
         }
 
         [HttpGet]
@@ -64,7 +127,45 @@ namespace AYOKONA.Controllers
         [HttpGet]
         public IActionResult Homepage() => View();
 
-        public IActionResult StudentDashboard() => View("StudentDashboard");
+        public async Task<IActionResult> StudentDashboard()
+        {
+            var userAccount = await GetCurrentUserAccountAsync();
+            if (userAccount == null)
+            {
+                TempData["ErrorMessage"] = "You must be logged in.";
+                return RedirectToAction("StudentLogin");
+            }
+
+            var userReservations = await _context.Reservations
+                .Where(r => r.UserId == userAccount.Id)
+                .Include(r => r.Group)
+                .Include(r => r.Period)
+                .OrderByDescending(r => r.Date)
+                .ThenByDescending(r => r.CreatedAt)
+                .Select(r => new
+                {
+                    r.ReservationId,
+                    r.Date,
+                    r.PeriodId,
+                    PeriodStartTime = r.Period.StartTime.ToString(),
+                    PeriodEndTime = r.Period.EndTime.ToString(),
+                    GroupName = r.Group.Name,
+                    GroupCategory = r.Group.Category,
+                    r.Purpose,
+                    r.ProfInCharge,
+                    r.Status
+                })
+                .ToListAsync();
+
+            // Explicitly serialize to JSON string to prevent cycle errors
+            var options = new JsonSerializerOptions
+            {
+                ReferenceHandler = ReferenceHandler.IgnoreCycles
+            };
+            ViewData["UserReservations"] = JsonSerializer.Serialize(userReservations, options);
+
+            return View("StudentDashboard");
+        }
 
         [HttpGet]
         public async Task<IActionResult> AddReservationForm()
@@ -403,7 +504,44 @@ namespace AYOKONA.Controllers
             ViewData["BlockingSlots"] = blockingSlots;
         }
 
-        public IActionResult UserReservation() => View();
+        public async Task<IActionResult> UserReservation()
+        {
+            var userAccount = await GetCurrentUserAccountAsync();
+            if (userAccount == null)
+            {
+                TempData["ErrorMessage"] = "You must be logged in.";
+                return RedirectToAction("StudentLogin");
+            }
+
+            var userReservations = await _context.Reservations
+                .Where(r => r.UserId == userAccount.Id)
+                .Include(r => r.Group)
+                .Include(r => r.Period)
+                .OrderByDescending(r => r.Date)
+                .ThenByDescending(r => r.CreatedAt)
+                .Select(r => new
+                {
+                    r.ReservationId,
+                    r.Date,
+                    r.PeriodId,
+                    PeriodStartTime = r.Period.StartTime.ToString(),
+                    PeriodEndTime = r.Period.EndTime.ToString(),
+                    GroupName = r.Group.Name,
+                    GroupCategory = r.Group.Category,
+                    r.Purpose,
+                    r.ProfInCharge,
+                    r.Status
+                })
+                .ToListAsync();
+
+            var options = new JsonSerializerOptions
+            {
+                ReferenceHandler = ReferenceHandler.IgnoreCycles
+            };
+            ViewData["UserReservations"] = JsonSerializer.Serialize(userReservations, options);
+
+            return View();
+        }
 
         public IActionResult UsersProfile()
         {

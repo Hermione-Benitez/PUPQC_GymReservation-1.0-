@@ -43,8 +43,8 @@
         }
 
         .status-approved {
-            background-color: #00bf63;
-            color: white;
+            background-color: #ffb000;
+            color: #333;
         }
 
         .status-pending {
@@ -81,30 +81,34 @@
 }
 
 <div class="w-full p-6 flex-grow flex flex-col">
-    <h1 class="text-3xl font-bold mb-4" style="color: #970c10;">Dashboard</h1>
+    <h1 class="text-3xl font-bold mb-4 text-center" style="color: #970c10;">Dashboard</h1>
 
-    <h2 class="text-2xl font-semibold mt-4 mb-2" style="color: #970c10;">Your Reservations</h2>
-    <div class="bg-white p-8 rounded-lg shadow-lg flex flex-col">
-        <div id="userReservationsContainer" class="space-y-3 flex-grow">
-            <p class="text-gray-500 text-center py-4" style="color: #970c10;">Loading your reservations...</p>
-        </div>
-        <div class="text-center mt-4">
-            <a href="/Users/UserReservation" id="viewMyReservationsLink" class="underline text-sm font-bold" style="color: #970c10;">View All Reservations</a>
+    <div class="mx-auto" style="width: 75%;">
+        <h2 class="text-2xl font-semibold mt-4 mb-2" style="color: #970c10;">Your Reservations</h2>
+        <div class="bg-white p-8 rounded-lg shadow-lg flex flex-col">
+            <div id="userReservationsContainer" class="space-y-3 flex-grow">
+                <p class="text-gray-500 text-center py-4" style="color: #970c10;">You have no active reservations.</p>
+            </div>
+            <div class="text-center mt-4">
+                <a href="/Users/UserReservation" id="viewMyReservationsLink" class="underline text-sm font-bold" style="color: #970c10;">View More Reservations</a>
+            </div>
         </div>
     </div>
 
-    <h2 class="text-2xl font-semibold mt-6 mb-2" style="color: #970c10;">Gym Availability</h2>
-    <div class="bg-white p-8 rounded-lg shadow-lg">
-        <div class="flex items-center justify-between mb-4">
-            <button id="prevMonthBtn" class="hover:text-blue-800 transition-colors text-lg font-semibold">
-                <span class="month-nav-arrow">&#10094;</span>
-                <span id="prevMonthText" style="color: #ffb000;"></span>
-            </button>
-            <span id="currentMonthYear" class="text-2xl font-bold" style="color: #970c10;"></span>
-            <button id="nextMonthBtn" class="hover:text-blue-800 transition-colors text-lg font-semibold">
-                <span id="nextMonthText" style="color: #ffb000;"></span>
-                <span class="month-nav-arrow">&#10095;</span>
-            </button>
+    <div class="mx-auto" style="width: 75%;">
+        <h2 id = "GymAvailability" class="text-2xl font-semibold mt-6 mb-2" style="color: #970c10;">Gym Availability</h2>
+        <div class="bg-white p-8 rounded-lg shadow-lg">
+            <div class="flex items-center justify-between mb-4">
+                <button id="prevMonthBtn" class="hover:text-blue-800 transition-colors text-lg font-semibold">
+                    <span class="month-nav-arrow">&#10094;</span>
+                    <span id="prevMonthText" style="color: #ffb000;"></span>
+                </button>
+                <span id="currentMonthYear" class="text-2xl font-bold" style="color: #970c10;"></span>
+                <button id="nextMonthBtn" class="hover:text-blue-800 transition-colors text-lg font-semibold">
+                    <span id="nextMonthText" style="color: #ffb000;"></span>
+                    <span class="month-nav-arrow">&#10095;</span>
+                </button>
+             </div> 
         </div>
 
         <div id="calendarGrid" class="calendar-grid shadow-md">
@@ -113,9 +117,11 @@
 </div>
 
 @section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         // Get the UserId from ViewData (passed by the C# controller)
         const currentUserId = '@ViewData["UserId"]';
+        const userReservationsData = JSON.parse('@Html.Raw(ViewData["UserReservations"])');
 
         // Initialize current month and year to the current date
         let today = new Date();
@@ -127,71 +133,96 @@
             "10:30 AM - 1:30 PM",
             "1:30 PM - 4:30 PM",
             "4:30 PM - 7:30 PM",
-            "7:30 PM - 8:30 PM"
+            "7:30 PM - 8:30 PM",
+            "Whole Day" // Include Whole Day period here
         ];
 
         document.getElementById('viewMyReservationsLink').addEventListener('click', (e) => {
             e.preventDefault();
-            window.location.href = '/User/MyReservations';
+            window.location.href = '/Users/UserReservation';
         });
 
         async function renderUserReservations() {
             const container = document.getElementById('userReservationsContainer');
-            container.innerHTML = '<p class="text-gray-500 text-center py-4" style="color: #970c10;">Loading your reservations...</p>';
+            container.innerHTML = ''; // Clear loading message
 
-            if (!currentUserId || currentUserId === '') {
-                container.innerHTML = '<p class="text-red-500 text-center py-4" style="color: #970c10;">User ID not found. Cannot load reservations.</p>';
-                console.error("User ID is not available. Cannot fetch user-specific reservations.");
+            if (!userReservationsData || userReservationsData.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center py-4" style="color: #970c10;">You have no active reservations.</p>';
                 return;
             }
 
-            try {
-                // --- DEBUGGING TIP: Check this API endpoint ---
-                // Ensure your backend for user reservations is running and accessible at this URL.
-                // Open browser console (F12) -> Network tab to see the request status and response.
-                const response = await fetch(`http://localhost:44318/api/reservations/user/${currentUserId}`);
+            const recentReservations = userReservationsData.slice(0, 3); // Show only recent 3
 
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+            recentReservations.forEach(reservation => {
+                const reservationDiv = document.createElement('div');
+                let statusClass = '';
+                if (reservation.Status === 'approved') {
+                    statusClass = 'status-approved';
+                } else if (reservation.Status === 'pending') {
+                    statusClass = 'status-pending';
+                } else if (reservation.Status === 'rejected') {
+                    statusClass = 'status-rejected';
                 }
-                const allReservations = await response.json();
 
-                if (allReservations.length === 0) {
-                    container.innerHTML = '<p class="text-gray-500 text-center py-4" style="color: #970c10;">You have no active reservations.</p>';
-                } else {
-                    allReservations.sort((a, b) => new Date(b.reservationDate) - new Date(a.reservationDate));
-                    const recentReservations = allReservations.slice(0, 3);
+                const reservationDate = new Date(reservation.Date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+                
+                // Format TimeSpan strings to readable time format (e.g., 9:00 AM - 10:00 AM)
+                const formatTime = (timeSpanString) => {
+                    // timeSpanString is typically "HH:mm:ss.ms" or "HH:mm:ss"
+                    const parts = timeSpanString.split(':');
+                    const hours = parseInt(parts[0], 10);
+                    const minutes = parseInt(parts[1], 10);
 
-                    container.innerHTML = '';
+                    const dateForTime = new Date(); // Use a dummy date to leverage Date object's time formatting
+                    dateForTime.setHours(hours);
+                    dateForTime.setMinutes(minutes);
+                    dateForTime.setSeconds(0);
 
-                    recentReservations.forEach(reservation => {
-                        const reservationDiv = document.createElement('div');
-                        let statusClass = '';
-                        if (reservation.status === 'Approved') {
-                            statusClass = 'status-approved';
-                        } else if (reservation.status === 'Pending') {
-                            statusClass = 'status-pending';
-                        } else if (reservation.status === 'Rejected') {
-                            statusClass = 'status-rejected';
-                        }
+                    return dateForTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+                };
 
-                        reservationDiv.className = `flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 rounded-lg shadow-sm reservation-item-bg`;
-                        reservationDiv.innerHTML = `
-                            <div class="flex flex-col">
-                                <span class="text-lg font-medium text-white">Date: ${new Date(reservation.reservationDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
-                                <span class="text-md text-white">Time: ${reservation.timeSlot}</span>
-                                <span class="text-md text-white">Purpose: ${reservation.purposeOfUse || 'N/A'}</span>
-                            </div>
-                            <span class="mt-2 sm:mt-0 px-3 py-1 text-sm font-semibold rounded-full ${statusClass}">Status: ${reservation.status}</span>
-                        `;
-                        container.appendChild(reservationDiv);
+                // Access PeriodStartTime and PeriodEndTime directly from the reservation object
+                const startTimeFormatted = reservation.PeriodStartTime ? formatTime(reservation.PeriodStartTime) : 'N/A';
+                const endTimeFormatted = reservation.PeriodEndTime ? formatTime(reservation.PeriodEndTime) : 'N/A';
+                const timeSlotName = (reservation.PeriodId === 6) ? 'Whole Day' : `${startTimeFormatted} - ${endTimeFormatted}`;
+
+                // Access GroupName directly from the reservation object
+                const groupName = reservation.GroupName || 'N/A';
+                const purpose = reservation.Purpose || 'N/A';
+                const profInCharge = reservation.ProfInCharge || 'N/A';
+                const status = reservation.Status || 'N/A';
+
+                reservationDiv.className = `flex flex-row items-center justify-between p-4 rounded-lg shadow-sm reservation-item-bg cursor-pointer`;
+                reservationDiv.innerHTML = `
+                    <div class="flex flex-row space-x-4 items-center">
+                        <span class="text-lg text-white"><strong style="font-weight: bold;">Date:</strong> ${reservationDate}</span>
+                        <span class="text-lg text-white"><strong style="font-weight: bold;">Time:</strong> ${timeSlotName}</span>
+                    </div>
+                    <span class="px-3 py-1 text-sm font-semibold rounded-full ${statusClass}">Status: ${status}</span>
+                `;
+                container.appendChild(reservationDiv);
+
+                // Add click event listener to show details
+                reservationDiv.addEventListener('click', () => {
+                    Swal.fire({
+                        title: 'Reservation Details',
+                        html: `
+                            <p><strong>Date:</strong> ${reservationDate}</p>
+                            <p><strong>Time:</strong> ${timeSlotName}</p>
+                            <p><strong>Group:</strong> ${groupName}</p>
+                            <p><strong>Purpose:</strong> ${purpose}</p>
+                            <p><strong>Professor In-Charge:</strong> ${profInCharge}</p>
+                            <p><strong>Status:</strong> ${status}</p>
+                        `,
+                        icon: 'info',
+                        confirmButtonText: 'OK'
                     });
-                }
-            } catch (error) {
-                console.error('Error fetching user reservations:', error);
-                container.innerHTML = '<p class="text-red-500 text-center py-4" style="color: #970c10;">Error loading your reservations. Please try again.</p>';
-            }
+                });
+            });
         }
+
+        // Call the render function on page load
+        renderUserReservations();
 
         async function renderCalendar(month, year) {
             const calendarGrid = document.getElementById('calendarGrid');
