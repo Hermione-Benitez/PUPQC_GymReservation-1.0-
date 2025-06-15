@@ -11,7 +11,6 @@
             align-items: center;
             justify-content: center;
             padding: 40px 0;
-            background-color: #f0f0f0; /* Neutral background for user page, adjust if needed */
             box-sizing: border-box;
         }
 
@@ -198,7 +197,7 @@
             }
         }
 
-        .edit-button, .save-button, .cancel-button {
+        .edit-button, .save-button, .cancel-button, .discard-button {
             padding: 8px 15px;
             border-radius: 5px;
             font-size: 13px;
@@ -237,6 +236,16 @@
 
         .cancel-button:hover {
             background-color: #555;
+            transform: translateY(-1px);
+        }
+
+        .discard-button {
+            background-color: #dc3545; /* Red color from the image */
+            color: white;
+        }
+
+        .discard-button:hover {
+            background-color: #c82333; /* Darker red on hover */
             transform: translateY(-1px);
         }
 
@@ -448,6 +457,7 @@
                             <button class="edit-button" style="${reservation.Status === 'ongoing' ? '' : 'display: none;'}">Edit</button>
                             <button class="save-button" style="display: none;">Save</button>
                             <button class="cancel-button" style="display: none;">Cancel</button>
+                            <button class="discard-button" style="${reservation.Status === 'ongoing' ? '' : 'display: none;'}">Discard</button>
                         </div>
                     </div>
                 `;
@@ -462,6 +472,7 @@
                     if (e.target.classList.contains('edit-button') || 
                         e.target.classList.contains('save-button') || 
                         e.target.classList.contains('cancel-button') ||
+                        e.target.classList.contains('discard-button') ||
                         e.target.closest('.edit-mode') || // Check if click is within edit mode elements
                         this.classList.contains('editing')) { // Check if we're in edit mode
                         return; 
@@ -475,6 +486,7 @@
                 const editButton = reservationDiv.querySelector('.edit-button');
                 const saveButton = reservationDiv.querySelector('.save-button');
                 const cancelButton = reservationDiv.querySelector('.cancel-button');
+                const discardButton = reservationDiv.querySelector('.discard-button');
                 const detailsDiv = reservationDiv.querySelector('.reservation-details');
                 
                 // Store original values for cancel functionality
@@ -488,6 +500,7 @@
                         editButton.style.display = 'none';
                         saveButton.style.display = 'inline-block';
                         cancelButton.style.display = 'inline-block';
+                        discardButton.style.display = 'none'; // Hide discard button while editing
 
                         // Show expanded details if not already
                         if (!detailsDiv.classList.contains('expanded')) {
@@ -503,10 +516,58 @@
                         editButton.style.display = 'inline-block';
                         saveButton.style.display = 'none';
                         cancelButton.style.display = 'none';
+                        discardButton.style.display = 'inline-block'; // Show discard button again
 
                         // Revert inputs to original values
                         reservationDiv.querySelector('textarea[data-field="Purpose"]').value = initialPurpose;
                         reservationDiv.querySelector('input[data-field="ProfInCharge"]').value = initialProfInCharge;
+                    });
+                }
+
+                if (discardButton) {
+                    discardButton.addEventListener('click', async (e) => {
+                        e.stopPropagation(); // Prevent event from bubbling up
+                        
+                        // Show confirmation dialog
+                        const result = await Swal.fire({
+                            title: 'Are you sure?',
+                            text: "This will cancel your reservation. This action cannot be undone!",
+                            icon: 'warning',
+                            showCancelButton: true,
+                            confirmButtonColor: '#dc3545',
+                            cancelButtonColor: '#6c757d',
+                            confirmButtonText: 'Yes, discard it!'
+                        });
+
+                        if (result.isConfirmed) {
+                            try {
+                                const response = await fetch('/Users/DiscardReservation', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                                    },
+                                    body: JSON.stringify({
+                                        ReservationId: reservation.ReservationId
+                                    })
+                                });
+
+                                const data = await response.json();
+
+                                if (data.success) {
+                                    // Update local data
+                                    reservation.Status = 'cancelled';
+                                    // Re-render to move to cancelled tab
+                                    renderUserReservations();
+                                    Swal.fire('Discarded!', 'Your reservation has been cancelled.', 'success');
+                                } else {
+                                    Swal.fire('Error!', data.message, 'error');
+                                }
+                            } catch (error) {
+                                console.error('Error discarding reservation:', error);
+                                Swal.fire('Error!', 'An unexpected error occurred while discarding the reservation.', 'error');
+                            }
+                        }
                     });
                 }
 

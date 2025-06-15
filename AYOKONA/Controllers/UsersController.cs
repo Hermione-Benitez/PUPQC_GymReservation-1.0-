@@ -10,6 +10,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Diagnostics;
 
 namespace AYOKONA.Controllers
 {
@@ -78,8 +79,59 @@ namespace AYOKONA.Controllers
             catch (Exception ex)
             {
                 // Log the exception (e.g., using a logging framework)
-                Console.WriteLine($"Error updating reservation and request: {ex.Message}");
+                Debug.WriteLine($"Error updating reservation and request: {ex.Message}");
                 return Json(new { success = false, message = "Error updating reservation and request." });
+            }
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DiscardReservation([FromBody] UpdateReservationViewModel model)
+        {
+            var userAccount = await GetCurrentUserAccountAsync();
+            if (userAccount == null)
+            {
+                return Json(new { success = false, message = "Not authenticated." });
+            }
+
+            var reservation = await _context.Reservations
+                .Where(r => r.ReservationId == model.ReservationId && r.UserId == userAccount.Id)
+                .FirstOrDefaultAsync();
+
+            if (reservation == null)
+            {
+                return Json(new { success = false, message = "Reservation not found or you don't have permission to discard it." });
+            }
+
+            // Only allow discarding for 'ongoing' reservations
+            if (reservation.Status != "ongoing")
+            {
+                return Json(new { success = false, message = "Only ongoing reservations can be discarded." });
+            }
+
+            try
+            {
+                // Update reservation status
+                reservation.Status = "cancelled";
+
+                // Find and update the corresponding request
+                var request = await _context.Requests
+                    .Where(r => r.ReservationId == reservation.ReservationId)
+                    .FirstOrDefaultAsync();
+
+                if (request != null)
+                {
+                    request.Status = "cancelled";
+                }
+
+                await _context.SaveChangesAsync();
+                return Json(new { success = true, message = "Reservation and request have been cancelled successfully." });
+            }
+            catch (Exception ex)
+            {
+                // Log the exception (e.g., using a logging framework)
+                Debug.WriteLine($"Error discarding reservation and request: {ex.Message}");
+                return Json(new { success = false, message = "Error discarding reservation and request." });
             }
         }
 
@@ -127,7 +179,7 @@ namespace AYOKONA.Controllers
         [HttpGet]
         public IActionResult Homepage() => View();
 
-        public async Task<IActionResult> StudentDashboard()
+        public async Task<IActionResult> StudentDashboard(int? month, int? year)
         {
             var userAccount = await GetCurrentUserAccountAsync();
             if (userAccount == null)
@@ -135,6 +187,17 @@ namespace AYOKONA.Controllers
                 TempData["ErrorMessage"] = "You must be logged in.";
                 return RedirectToAction("StudentLogin");
             }
+
+            // Set current month and year for calendar display
+            DateTime targetDate = DateTime.Today;
+            if (month.HasValue && year.HasValue)
+            {
+                targetDate = new DateTime(year.Value, month.Value, 1);
+            }
+            Debug.WriteLine($"Target Date for Calendar: {targetDate.ToShortDateString()}"); // Debugging
+
+            ViewData["CurrentMonth"] = targetDate.Month;
+            ViewData["CurrentYear"] = targetDate.Year;
 
             var userReservations = await _context.Reservations
                 .Where(r => r.UserId == userAccount.Id)
@@ -157,12 +220,54 @@ namespace AYOKONA.Controllers
                 })
                 .ToListAsync();
 
-            // Explicitly serialize to JSON string to prevent cycle errors
             var options = new JsonSerializerOptions
             {
                 ReferenceHandler = ReferenceHandler.IgnoreCycles
             };
             ViewData["UserReservations"] = JsonSerializer.Serialize(userReservations, options);
+
+            // Fetch Periods for column headers, excluding 'Whole Day' (PeriodId 6)
+            var periods = await _context.Periods
+                .Where(p => p.PeriodId != 6) // Exclude PeriodId 6 (Whole Day)
+                .OrderBy(p => p.StartTime)
+                .Select(p => new { p.PeriodId, StartTime = p.StartTime.ToString(), EndTime = p.EndTime.ToString() })
+                .ToListAsync();
+            ViewData["Periods"] = JsonSerializer.Serialize(periods, options);
+
+            // Fetch approved reservations for the current month and year
+            var approvedCalendarSlots = await _context.Reservations
+                .Where(r => r.Status == "approved" && r.Date.Month == targetDate.Month && r.Date.Year == targetDate.Year)
+                .Select(r => new { r.Date, r.PeriodId })
+                .ToListAsync();
+            Debug.WriteLine($"Number of APPROVED calendar slots fetched for {targetDate.ToShortDateString()}: {approvedCalendarSlots.Count}"); // Debugging
+            ViewData["ApprovedCalendarSlots"] = JsonSerializer.Serialize(approvedCalendarSlots, options);
+
+            // Fetch fully booked slots (3 or more reservations for a specific period on a date)
+            var fullyBookedSlots = await _context.Reservations
+                .Where(r => r.Date.Month == targetDate.Month && r.Date.Year == targetDate.Year)
+                .GroupBy(r => new { r.Date, r.PeriodId })
+                .Where(g => g.Count() >= 3)
+                .Select(g => new { g.Key.Date, g.Key.PeriodId })
+                .ToListAsync();
+            ViewData["FullyBookedSlots"] = JsonSerializer.Serialize(fullyBookedSlots, options);
+
+            // Fetch 'Whole Day' approved/completed requests/reservations
+            var wholeDayReservations = await _context.Reservations
+                .Where(r => r.Date.Month == targetDate.Month && r.Date.Year == targetDate.Year && r.PeriodId == 6)
+                .Select(r => new { r.Date })
+                .ToListAsync();
+            
+            var wholeDayRequests = await _context.Requests
+                .Where(r => r.Date.Month == targetDate.Month && r.Date.Year == targetDate.Year && r.PeriodId == 6 && r.Status == "approved")
+                .Select(r => new { r.Date })
+                .ToListAsync();
+
+            // Combine and get distinct dates for whole day blocks
+            var wholeDayBlockedDates = wholeDayReservations.Select(r => r.Date)
+                                        .Concat(wholeDayRequests.Select(req => req.Date))
+                                        .Distinct()
+                                        .ToList();
+            ViewData["WholeDayBlockedDates"] = JsonSerializer.Serialize(wholeDayBlockedDates, options);
 
             return View("StudentDashboard");
         }
@@ -341,31 +446,31 @@ namespace AYOKONA.Controllers
             }
 
             // Server-side validation: Prevent duplicate ongoing reservations or pending requests for the same group/date/period
-            System.Console.WriteLine($"Server-side validation check started for GroupId: {group.GroupId}, PeriodId: {model.PeriodId}, Date: {model.ReservationDate:yyyy-MM-dd}");
+            Debug.WriteLine($"Server-side validation check started for GroupId: {group.GroupId}, PeriodId: {model.PeriodId}, Date: {model.ReservationDate:yyyy-MM-dd}");
 
             var existingOngoingReservation = await _context.Reservations
                 .AnyAsync(r => r.GroupId == group.GroupId && 
                                r.PeriodId == model.PeriodId && 
                                r.Date == model.ReservationDate && 
                                r.Status == "ongoing");
-            System.Console.WriteLine($"Existing Ongoing Reservation found: {existingOngoingReservation}");
+            Debug.WriteLine($"Existing Ongoing Reservation found: {existingOngoingReservation}");
 
             var existingPendingRequest = await _context.Requests
                 .AnyAsync(req => req.GroupId == group.GroupId && 
                                  req.PeriodId == model.PeriodId && 
                                  req.Date == model.ReservationDate && 
                                  req.Status == "pending");
-            System.Console.WriteLine($"Existing Pending Request found: {existingPendingRequest}");
+            Debug.WriteLine($"Existing Pending Request found: {existingPendingRequest}");
 
             if (existingOngoingReservation || existingPendingRequest)
             {
-                System.Console.WriteLine("Blocking submission: Duplicate active reservation/request found.");
+                Debug.WriteLine("Blocking submission: Duplicate active reservation/request found.");
                 ModelState.AddModelError("", $"A reservation for {group.Name} on {model.ReservationDate:yyyy-MM-dd} during the selected time period is already ongoing or pending. Please select a different date or time, or wait for the existing reservation/request to be completed/approved.");
                 ViewData["Periods"] = await _context.Periods.OrderBy(p => p.StartTime).ToListAsync();
                 await PopulateReservationSlotsViewData(); // Call helper method to re-populate for error
                 return View("AddReservationForm", model);
             }
-            System.Console.WriteLine("No blocking reservation/request found. Proceeding with submission.");
+            Debug.WriteLine("No blocking reservation/request found. Proceeding with submission.");
 
             var period = await _context.Periods.FindAsync(model.PeriodId);
             if (period == null)
