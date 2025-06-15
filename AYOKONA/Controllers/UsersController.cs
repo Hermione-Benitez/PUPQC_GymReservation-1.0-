@@ -80,25 +80,78 @@ namespace AYOKONA.Controllers
             {
                 Name = userAccount.Name,
                 Section = userAccount.Section,
-                ReservationDate = DateTime.Today
+                ReservationDate = DateTime.Today.AddDays(1)
             };
 
             ViewData["Periods"] = await _context.Periods.OrderBy(p => p.StartTime).ToListAsync();
+            await PopulateReservationSlotsViewData(); // Call helper method to populate all slot data
 
-            // Get all approved requests (date, periodId)
+            // Get all approved requests (date, periodId) - These generally make a slot unavailable for any group, e.g. for facility closure
+            // If an approved request means the group can re-reserve, this list should only contain truly generally unavailable slots (e.g. PeriodId 6 Whole Day, or if the facility is full)
             var approvedSlots = await _context.Requests
                 .Where(r => r.Status == "approved")
                 .Select(r => new { r.Date, r.PeriodId })
                 .ToListAsync();
             ViewData["ApprovedSlots"] = approvedSlots;
 
-            // Get all fully booked slots (date, periodId) with 3 or more reservations
+            // Get all fully booked slots (date, periodId) with 3 or more reservations - General time slot limit
             var fullyBookedSlots = await _context.Reservations
                 .GroupBy(r => new { r.Date, r.PeriodId })
                 .Where(g => g.Count() >= 3)
                 .Select(g => new { g.Key.Date, g.Key.PeriodId })
                 .ToListAsync();
             ViewData["FullyBookedSlots"] = fullyBookedSlots;
+
+            // Get group-specific blocking slots (ongoing reservations or pending requests for the specific group)
+            // These combinations will prevent new reservations for the same group/date/period
+            var blockingReservations = await _context.Reservations
+                .Where(r => r.Status == "ongoing") // Ongoing reservations block for a group
+                .Include(r => r.Group)
+                .Select(r => new
+                {
+                    r.Date,
+                    r.PeriodId,
+                    r.GroupId,
+                    GroupName = r.Group.Name,
+                    GroupCategory = r.Group.Category
+                })
+                .ToListAsync();
+
+            var blockingRequests = await _context.Requests
+                .Where(r => r.Status == "pending") // Pending requests block for a group
+                .Include(r => r.Group)
+                .Select(r => new
+                {
+                    r.Date,
+                    r.PeriodId,
+                    r.GroupId,
+                    GroupName = r.Group.Name,
+                    GroupCategory = r.Group.Category
+                })
+                .ToListAsync();
+
+            var blockingSlots = blockingReservations
+                .Concat(blockingRequests)
+                .Distinct() // Ensure unique entries based on all properties
+                .ToList();
+
+            ViewData["BlockingSlots"] = blockingSlots;
+
+            // Get all relevant reservation details for client-side validation
+            var existingReservations = await _context.Reservations
+                .Include(r => r.Group) // Include Group to get Name and Category
+                .Select(r => new
+                {
+                    r.ReservationId,
+                    r.Date,
+                    r.PeriodId,
+                    r.GroupId,
+                    r.Status,
+                    GroupName = r.Group.Name, // Get the name of the group/section/organization
+                    GroupCategory = r.Group.Category // Get the category of the group (section/org)
+                })
+                .ToListAsync();
+            ViewData["ExistingReservations"] = existingReservations;
 
             return View("AddReservationForm", model);
         }
@@ -112,6 +165,7 @@ namespace AYOKONA.Controllers
             {
                 ModelState.AddModelError("", "You are not logged in.");
                 ViewData["Periods"] = await _context.Periods.OrderBy(p => p.StartTime).ToListAsync();
+                await PopulateReservationSlotsViewData(); // Re-populate for error return
                 return View("AddReservationForm", model);
             }
 
@@ -139,9 +193,9 @@ namespace AYOKONA.Controllers
                 ModelState.AddModelError("Category", "Please select a valid category.");
             }
 
-            if (model.ReservationDate < DateTime.Today)
+            if (model.ReservationDate < DateTime.Today.AddDays(1)) // Check against tomorrow for future dates
             {
-                ModelState.AddModelError("ReservationDate", "Reservation date cannot be in the past.");
+                ModelState.AddModelError("ReservationDate", "Reservation date cannot be today or in the past.");
             }
 
             if (model.PeriodId == 0)
@@ -152,6 +206,7 @@ namespace AYOKONA.Controllers
             if (!ModelState.IsValid)
             {
                 ViewData["Periods"] = await _context.Periods.OrderBy(p => p.StartTime).ToListAsync();
+                await PopulateReservationSlotsViewData(); // Re-populate for error return
                 return View("AddReservationForm", model);
             }
 
@@ -179,15 +234,44 @@ namespace AYOKONA.Controllers
                 {
                     ModelState.AddModelError("", $"No matching group found for category '{model.Category}' and name '{groupName}'.");
                     ViewData["Periods"] = await _context.Periods.OrderBy(p => p.StartTime).ToListAsync();
+                    await PopulateReservationSlotsViewData(); // Re-populate for error return
                     return View("AddReservationForm", model);
                 }
             }
+
+            // Server-side validation: Prevent duplicate ongoing reservations or pending requests for the same group/date/period
+            System.Console.WriteLine($"Server-side validation check started for GroupId: {group.GroupId}, PeriodId: {model.PeriodId}, Date: {model.ReservationDate:yyyy-MM-dd}");
+
+            var existingOngoingReservation = await _context.Reservations
+                .AnyAsync(r => r.GroupId == group.GroupId && 
+                               r.PeriodId == model.PeriodId && 
+                               r.Date == model.ReservationDate && 
+                               r.Status == "ongoing");
+            System.Console.WriteLine($"Existing Ongoing Reservation found: {existingOngoingReservation}");
+
+            var existingPendingRequest = await _context.Requests
+                .AnyAsync(req => req.GroupId == group.GroupId && 
+                                 req.PeriodId == model.PeriodId && 
+                                 req.Date == model.ReservationDate && 
+                                 req.Status == "pending");
+            System.Console.WriteLine($"Existing Pending Request found: {existingPendingRequest}");
+
+            if (existingOngoingReservation || existingPendingRequest)
+            {
+                System.Console.WriteLine("Blocking submission: Duplicate active reservation/request found.");
+                ModelState.AddModelError("", $"A reservation for {group.Name} on {model.ReservationDate:yyyy-MM-dd} during the selected time period is already ongoing or pending. Please select a different date or time, or wait for the existing reservation/request to be completed/approved.");
+                ViewData["Periods"] = await _context.Periods.OrderBy(p => p.StartTime).ToListAsync();
+                await PopulateReservationSlotsViewData(); // Call helper method to re-populate for error
+                return View("AddReservationForm", model);
+            }
+            System.Console.WriteLine("No blocking reservation/request found. Proceeding with submission.");
 
             var period = await _context.Periods.FindAsync(model.PeriodId);
             if (period == null)
             {
                 ModelState.AddModelError("PeriodId", "Invalid time slot.");
                 ViewData["Periods"] = await _context.Periods.OrderBy(p => p.StartTime).ToListAsync();
+                await PopulateReservationSlotsViewData(); // Re-populate for error return
                 return View("AddReservationForm", model);
             }
 
@@ -198,6 +282,7 @@ namespace AYOKONA.Controllers
             {
                 ModelState.AddModelError("", "The selected time slot and date is fully booked.");
                 ViewData["Periods"] = await _context.Periods.OrderBy(p => p.StartTime).ToListAsync();
+                await PopulateReservationSlotsViewData(); // Re-populate for error return
                 return View("AddReservationForm", model);
             }
 
@@ -209,6 +294,7 @@ namespace AYOKONA.Controllers
             {
                 ModelState.AddModelError("", "You have reached the maximum of 3 reservation attempts for today. Please return tomorrow");
                 ViewData["Periods"] = await _context.Periods.OrderBy(p => p.StartTime).ToListAsync();
+                await PopulateReservationSlotsViewData(); // Re-populate for error return
                 return View("AddReservationForm", model);
             }
 
@@ -245,8 +331,76 @@ namespace AYOKONA.Controllers
             _context.Requests.Add(newRequest);
             await _context.SaveChangesAsync();
 
-            TempData["SuccessMessage"] = "Reservation submitted successfully!";
-            return RedirectToAction("StudentDashboard");
+            TempData["SubmissionSuccess"] = true; // Set a flag for success message
+            // Instead of redirecting, return the same view with updated data
+            ViewData["Periods"] = await _context.Periods.OrderBy(p => p.StartTime).ToListAsync();
+            await PopulateReservationSlotsViewData(); // Ensure all slot data is re-populated
+            return View("AddReservationForm", model);
+        }
+
+        // Helper method to populate ViewData for reservation slots
+        private async Task PopulateReservationSlotsViewData()
+        {
+            // Get all approved requests and their associated reservations
+            var approvedRequests = await _context.Requests
+                .Include(r => r.Reservation)
+                .Include(r => r.Group)
+                .Where(r => r.Status == "approved")
+                .ToListAsync();
+
+            // Get all pending requests
+            var pendingRequests = await _context.Requests
+                .Include(r => r.Group)
+                .Where(r => r.Status == "pending")
+                .ToListAsync();
+
+            // Get all fully booked slots (approved reservations)
+            var fullyBookedSlots = approvedRequests
+                .Select(r => new
+                {
+                    Date = r.Date.ToString("yyyy-MM-dd"),
+                    PeriodId = r.PeriodId,
+                    GroupName = r.Group.Name,
+                    Category = r.Group.Category
+                })
+                .ToList();
+
+            // Get all blocking slots (pending requests)
+            var blockingSlots = pendingRequests
+                .Select(r => new
+                {
+                    Date = r.Date.ToString("yyyy-MM-dd"),
+                    PeriodId = r.PeriodId,
+                    GroupName = r.Group.Name,
+                    Category = r.Group.Category
+                })
+                .ToList();
+
+            // Check for approved Whole Day reservations (PeriodId 6)
+            var wholeDayRequests = await _context.Requests
+                .Include(r => r.Group)
+                .Where(r => r.Status == "approved" && r.PeriodId == 6)
+                .ToListAsync();
+
+            // Add all time slots for dates with approved Whole Day reservations to fullyBookedSlots
+            var allPeriods = await _context.Periods.ToListAsync();
+            foreach (var wholeDayReq in wholeDayRequests)
+            {
+                foreach (var period in allPeriods)
+                {
+                    fullyBookedSlots.Add(new
+                    {
+                        Date = wholeDayReq.Date.ToString("yyyy-MM-dd"),
+                        PeriodId = period.PeriodId,
+                        GroupName = wholeDayReq.Group.Name,
+                        Category = wholeDayReq.Group.Category
+                    });
+                }
+            }
+
+            ViewData["ApprovedSlots"] = fullyBookedSlots;
+            ViewData["FullyBookedSlots"] = fullyBookedSlots;
+            ViewData["BlockingSlots"] = blockingSlots;
         }
 
         public IActionResult UserReservation() => View();
