@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using Microsoft.EntityFrameworkCore;
 
 namespace AYOKONA.Controllers
 {
@@ -68,8 +69,37 @@ namespace AYOKONA.Controllers
         }
 
         [HttpGet]
-        public IActionResult AdminDashboard()
+        public async Task<IActionResult> AdminDashboard()
         {
+            var requests = await _context.Requests
+                .Include(r => r.User) // Corrected: Include User to get user details
+                .Include(r => r.Group)       // Include Group to get group name and category
+                .Include(r => r.Period)      // Include Period to get start and end times
+                .OrderByDescending(r => r.CreatedAt)
+                .Select(r => new
+                {
+                    r.RequestId,
+                    r.Date,
+                    r.PeriodId,
+                    PeriodStartTime = r.Period.StartTime.ToString(),
+                    PeriodEndTime = r.Period.EndTime.ToString(),
+                    GroupName = r.Group.Name,
+                    GroupCategory = r.Group.Category,
+                    UserName = r.User.Name, // Corrected: Get user's name from r.User
+                    UserSection = r.User.Section, // Corrected: Get user's section from r.User
+                    r.Purpose,
+                    r.ProfInCharge,
+                    r.Status,
+                    r.CreatedAt // To sort by latest
+                })
+                .ToListAsync();
+
+            var options = new System.Text.Json.JsonSerializerOptions
+            {
+                ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles
+            };
+            ViewData["ReservationRequests"] = System.Text.Json.JsonSerializer.Serialize(requests, options);
+
             return View("AdminDashboard");
         }
 
@@ -123,7 +153,6 @@ namespace AYOKONA.Controllers
 
             return View(admin);
         }
-
         /*
         [Authorize]
         [HttpPost]

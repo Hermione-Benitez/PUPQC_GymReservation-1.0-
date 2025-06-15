@@ -194,7 +194,6 @@ namespace AYOKONA.Controllers
             {
                 targetDate = new DateTime(year.Value, month.Value, 1);
             }
-            Debug.WriteLine($"Target Date for Calendar: {targetDate.ToShortDateString()}"); // Debugging
 
             ViewData["CurrentMonth"] = targetDate.Month;
             ViewData["CurrentYear"] = targetDate.Year;
@@ -239,7 +238,6 @@ namespace AYOKONA.Controllers
                 .Where(r => r.Status == "approved" && r.Date.Month == targetDate.Month && r.Date.Year == targetDate.Year)
                 .Select(r => new { r.Date, r.PeriodId })
                 .ToListAsync();
-            Debug.WriteLine($"Number of APPROVED calendar slots fetched for {targetDate.ToShortDateString()}: {approvedCalendarSlots.Count}"); // Debugging
             ViewData["ApprovedCalendarSlots"] = JsonSerializer.Serialize(approvedCalendarSlots, options);
 
             // Fetch fully booked slots (3 or more reservations for a specific period on a date)
@@ -262,7 +260,6 @@ namespace AYOKONA.Controllers
                 .Select(r => new { r.Date })
                 .ToListAsync();
 
-            // Combine and get distinct dates for whole day blocks
             var wholeDayBlockedDates = wholeDayReservations.Select(r => r.Date)
                                         .Concat(wholeDayRequests.Select(req => req.Date))
                                         .Distinct()
