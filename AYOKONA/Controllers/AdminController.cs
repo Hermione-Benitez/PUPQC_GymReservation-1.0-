@@ -92,6 +92,7 @@ namespace AYOKONA.Controllers
                     r.Status,
                     r.CreatedAt // To sort by latest
                 })
+                .Take(3)
                 .ToListAsync();
 
             var options = new System.Text.Json.JsonSerializerOptions
@@ -105,7 +106,65 @@ namespace AYOKONA.Controllers
 
         public IActionResult AdminManage()
         {
+            var requests = _context.Requests
+                .Include(r => r.User)
+                .Include(r => r.Group)
+                .Include(r => r.Period)
+                .ToList();
+
+            var approved = requests.Where(r => r.Status.ToLower() == "approved").ToList();
+            var pending = requests.Where(r => r.Status.ToLower() == "pending").ToList();
+            var declined = requests.Where(r => r.Status.ToLower() == "declined" || r.Status.ToLower() == "denied" || r.Status.ToLower() == "cancelled").ToList();
+
+            ViewData["Approved"] = approved;
+            ViewData["Pending"] = pending;
+            ViewData["Declined"] = declined;
+
             return View();
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> UpdateRequestStatus(int id, string status)
+        {
+            var request = await _context.Requests.FirstOrDefaultAsync(r => r.RequestId == id);
+            if (request != null)
+            {
+                string newReservationStatus = null;
+
+                if (status == "Approved")
+                {
+                    request.Status = "Approved";
+                    newReservationStatus = "ongoing";
+                }
+                else if (status == "Declined")
+                {
+                    request.Status = "Declined";
+                    newReservationStatus = "cancelled";
+                }
+                else
+                {
+                    request.Status = status;
+                }
+
+                _context.Requests.Update(request);
+
+                // Update the corresponding Reservation status if needed
+                if (newReservationStatus != null)
+                {
+                    var reservation = await _context.Reservations
+                        .FirstOrDefaultAsync(r => r.ReservationId == request.ReservationId);
+                    
+                    if (reservation != null)
+                    {
+                        reservation.Status = newReservationStatus;
+                        _context.Reservations.Update(reservation);
+                    }
+                }
+
+                await _context.SaveChangesAsync();
+                return RedirectToAction(nameof(AdminDashboard));
+            }
+            return RedirectToAction("AdminManage");
         }
 
         [Authorize]
@@ -153,11 +212,11 @@ namespace AYOKONA.Controllers
 
             return View(admin);
         }
-        /*
+
         [Authorize]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult AdminEditProfile(Admin updatedAdmin)
+        public IActionResult AdminEditProfile(AdminAccount updatedAdmin)
         {
             if (!ModelState.IsValid)
             {
@@ -165,27 +224,22 @@ namespace AYOKONA.Controllers
             }
 
             var email = User.Identity.Name;
-            var existingAdmin = _context.Admins.FirstOrDefault(a => a.Email == email);
+            var existingAdmin = _context.AdminAccounts.FirstOrDefault(a => a.Email == email);
 
             if (existingAdmin == null)
             {
                 return NotFound("Admin profile not found.");
             }
 
-            /* Update fields
-            existingAdmin.FullName = updatedAdmin.FullName;
-            existingAdmin.Department = updatedAdmin.Department;
-            existingAdmin.Position = updatedAdmin.Position;
-            existingAdmin.PhoneNumber = updatedAdmin.PhoneNumber;
-            existingAdmin.Address = updatedAdmin.Address;
-            existingAdmin.EmploymentStatus = updatedAdmin.EmploymentStatus;
-            existingAdmin.Campus = updatedAdmin.Campus; 
+            // Update fields
+            existingAdmin.Name = updatedAdmin.Name;
+            existingAdmin.Email = updatedAdmin.Email;
 
             _context.SaveChanges();
 
             TempData["SuccessMessage"] = "Profile updated successfully.";
             return RedirectToAction("AdminProfile");
-        } */
+        }
 
         [HttpPost]
         [ValidateAntiForgeryToken]

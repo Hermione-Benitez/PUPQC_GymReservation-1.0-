@@ -1,67 +1,452 @@
-﻿@{
-    ViewData["Title"] = "AdminManage";
-    Layout = "Admin_Layout";
+﻿@using AYOKONA.Entities
+@{
+    ViewData["Title"] = "Manage Requests";
+    Layout = "~/Views/Shared/Admin_Layout.cshtml";
 }
 
-<div class="admin-manage-outer">
-    <div class="container">
-        <h2 class="requests-title">Requests</h2>
+@section Styles {
+    <style>
+        .user-reservations-outer {
+            min-height: calc(85vh - 120px); /* Adjust 120px to match your header+footer height */
+            display: flex;
+            align-items: center;
+            padding: 40px 0;
+            box-sizing: border-box;
+        }
 
-        <div class="requests-card">
-            <div class="tabs-container">
-                <button class="tab" onclick="switchTab('approved')">Approved</button>
-                <button class="tab" onclick="switchTab('pending')">Pending</button>
-                <button class="tab active" onclick="switchTab('cancelled')">Cancelled/Declined</button>
-            </div>
+        .container {
+            max-width: 800px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
 
-            <div class="requests-content">
-                <div id="approved-content" class="tab-content" style="display: none;">
-                    <div class="empty-state">No approved requests found.</div>
+        .reservations-title {
+            color: #970c10;
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 30px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .reservations-card {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+        .tabs-container {
+            display: flex;
+            border-bottom: 1px solid #eee;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 15px 20px;
+            text-align: center;
+            background: #f8f8f8;
+            color: #666;
+            cursor: pointer;
+            font-weight: bold;
+            border: none;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+            .tab:first-child {
+                border-top-left-radius: 15px;
+            }
+
+            .tab:last-child {
+                border-top-right-radius: 15px;
+            }
+
+            .tab.active {
+                background-color: #970c10;
+                color: white;
+            }
+
+            .tab:not(.active):hover {
+                background-color: #eee;
+            }
+
+        .reservations-content {
+            padding: 25px;
+            min-height: 300px;
+        }
+
+        .reservation-item {
+            background: white;
+            border: 2px solid #970c10;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+            .reservation-item:hover {
+                border-color: #970c10;
+                box-shadow: 0 4px 12px rgba(151, 12, 16, 0.1);
+            }
+
+        .reservation-header {
+            background-color: #970c10;
+            color: white;
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #970c10; /* Use user accent color */
+        }
+
+        .reservation-info {
+            display: flex;
+            gap: 30px;
+            font-size: 14px;
+            color: #ffffff;
+            border-color: #970c10;
+            font-weight: bold;
+        }
+
+        .status-badge {
+            padding: 6px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            color: white;
+        }
+
+        /* User-specific status colors */
+        .status-approved {
+            background-color: #00bf63;
+            color: white;
+        }
+
+        .status-pending {
+            background-color: #970c10;
+            color: white;
+        }
+
+        .status-rejected,
+        .status-cancelled {
+            background-color: dimgrey;
+            color: white;
+        }
+
+        .status-completed {
+            background-color: #00bf63;
+            color: white;
+        }
+
+        .reservation-details {
+            padding: 15px 20px;
+            background: #f9f9f9;
+            display: none; /* Hidden by default */
+            flex-direction: column;
+            gap: 10px;
+            font-size: 13px;
+            border-top: 1px solid #eee;
+        }
+
+            .reservation-details.expanded {
+                display: flex;
+            }
+
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .detail-label {
+            font-weight: bold;
+            color: #970c10;
+            font-style: italic;
+            margin-bottom: 3px;
+        }
+
+        .detail-value {
+            color: #333;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #666;
+            padding: 50px;
+            font-style: italic;
+        }
+
+        .tab-content {
+            display: none; /* Hide all tab contents by default */
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @@media (max-width: 900px) {
+            .container {
+                max-width: 98vw;
+                padding: 0 2vw;
+            }
+
+            .reservation-info {
+                flex-direction: column;
+                gap: 5px;
+            }
+        }
+
+        .edit-button, .save-button, .cancel-button, .discard-button {
+            padding: 8px 15px;
+            border-radius: 5px;
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            border: none;
+            margin-top: 10px; /* Space above buttons */
+            margin-left: 10px;
+        }
+
+        .edit-button {
+            background-color: #ffb000;
+            color: white;
+        }
+
+        .edit-button:hover {
+            background-color: #e69500;
+            transform: translateY(-1px);
+        }
+
+        .save-button {
+            background-color: #00bf63;
+            color: white;
+        }
+
+        .save-button:hover {
+            background-color: #00a354;
+            transform: translateY(-1px);
+        }
+
+        .cancel-button {
+            background-color: dimgrey;
+            color: white;
+        }
+
+        .cancel-button:hover {
+            background-color: #555;
+            transform: translateY(-1px);
+        }
+
+        .discard-button {
+            background-color: #dc3545; /* Red color from the image */
+            color: white;
+        }
+
+        .discard-button:hover {
+            background-color: #c82333; /* Darker red on hover */
+            transform: translateY(-1px);
+        }
+
+        .button-group {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 15px; /* Space between details and buttons */
+        }
+
+        .detail-value.read-mode {
+            display: block;
+        }
+
+        .detail-value.edit-mode {
+            display: none;
+        }
+
+        .reservation-item.editing .detail-value.read-mode {
+            display: none;
+        }
+
+        .reservation-item.editing .detail-value.edit-mode {
+            display: block;
+        }
+
+        .detail-value.edit-mode input[type="text"],
+        .detail-value.edit-mode textarea,
+        .detail-value.edit-mode select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+
+        .detail-value.edit-mode textarea {
+            resize: vertical;
+            min-height: 60px;
+        }
+    </style>
+}
+
+<div class="container mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-4 text-center" style="color: #970c10;">Manage Requests</h1>
+
+    <div class="user-reservations-outer">
+        <div class="container">
+            <h2 class="reservations-title">Requests</h2>
+
+            <div class="reservations-card">
+                <div class="tabs-container">
+                    <button class="tab active" onclick="switchTab(event, 'approved')">Approved</button>
+                    <button class="tab" onclick="switchTab(event, 'pending')">Pending</button>
+                    <button class="tab" onclick="switchTab(event, 'cancelled')">Cancelled/Declined</button>
                 </div>
 
-                <div id="pending-content" class="tab-content" style="display: none;">
-                    <div class="empty-state">No pending requests found.</div>
-                </div>
-
-                <div id="cancelled-content" class="tab-content">
-                    <div class="request-item">
-                        <div class="request-header">
-                            <div class="request-info">
-                                <span>Date: May 1, 2025</span>
-                                <span>Time: 10:30AM - 11:00AM</span>
-                            </div>
-                            <div class="status-badge status-declined">DECLINED</div>
-                        </div>
-                        <div class="request-details">
-                            <div class="detail-item">
-                                <span class="detail-label">Category:</span>
-                                <span class="detail-value">Class</span>
-                            </div>
-                            <div class="detail-item">
-                                <span class="detail-label">Course/Year/Section:</span>
-                                <span class="detail-value">BSIT 2-2</span>
-                            </div>
-                        </div>
+                <div class="reservations-content">
+                    <div id="approved-content" class="tab-content active">
+                        @if (ViewData["Approved"] != null && ((List<Request>)ViewData["Approved"]).Any())
+                        {
+                            foreach (var request in (List<Request>)ViewData["Approved"])
+                            {
+                                <div class="reservation-item">
+                                    <div class="reservation-header">
+                                        <div class="reservation-info">
+                                            <span>Date: @request.Date.ToString("MMMM dd, yyyy")</span>
+                                            @{
+                                                var startTime = new DateTime().Add(request.Period.StartTime);
+                                                var endTime = new DateTime().Add(request.Period.EndTime);
+                                            }
+                                            <span>Time: @startTime.ToString("hh:mm tt") - @endTime.ToString("hh:mm tt")</span>
+                                        </div>
+                                        <div class="status-badge status-approved">@request.Status.ToUpper()</div>
+                                    </div>
+                                    <div class="reservation-details">
+                                        <div class="detail-item">
+                                            <span class="detail-label">Category:</span>
+                                            <span class="detail-value">@request.Group.Category</span>
+                                        </div>
+                                        <div class="detail-item">
+                                            <span class="detail-label">Group Name:</span>
+                                            <span class="detail-value">@request.Group.Name</span>
+                                        </div>
+                                        <div class="detail-item">
+                                            <span class="detail-label">Professor In-Charge:</span>
+                                            <span class="detail-value">@request.ProfInCharge</span>
+                                        </div>
+                                        <div class="detail-item">
+                                            <span class="detail-label">Purpose:</span>
+                                            <span class="detail-value">@request.Purpose</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="empty-state">No approved requests found.</div>
+                        }
                     </div>
 
-                    <div class="request-item">
-                        <div class="request-header">
-                            <div class="request-info">
-                                <span>Date: May 2, 2025</span>
-                                <span>Time: 10:30AM - 11:00AM</span>
-                            </div>
-                            <div class="status-badge status-cancelled">CANCELLED</div>
-                        </div>
-                        <div class="request-details">
-                            <div class="detail-item">
-                                <span class="detail-label">Category:</span>
-                                <span class="detail-value">Org</span>
-                            </div>
-                            <div class="detail-item">
-                                <span class="detail-label">Course/Year/Section:</span>
-                                <span class="detail-value">BSIT 2-2</span>
-                            </div>
-                        </div>
+                    <div id="pending-content" class="tab-content">
+                        @if (ViewData["Pending"] != null && ((List<Request>)ViewData["Pending"]).Any())
+                        {
+                            foreach (var request in (List<Request>)ViewData["Pending"])
+                            {
+                                <div class="reservation-item">
+                                    <div class="reservation-header">
+                                        <div class="reservation-info">
+                                            <span>Date: @request.Date.ToString("MMMM dd, yyyy")</span>
+                                            @{
+                                                var startTime = new DateTime().Add(request.Period.StartTime);
+                                                var endTime = new DateTime().Add(request.Period.EndTime);
+                                            }
+                                            <span>Time: @startTime.ToString("hh:mm tt") - @endTime.ToString("hh:mm tt")</span>
+                                        </div>
+                                        <div class="status-badge status-pending">@request.Status.ToUpper()</div>
+                                    </div>
+                                    <div class="reservation-details">
+                                        <div class="detail-item">
+                                            <span class="detail-label">Category:</span>
+                                            <span class="detail-value">@request.Group.Category</span>
+                                        </div>
+                                        <div class="detail-item">
+                                            <span class="detail-label">Group Name:</span>
+                                            <span class="detail-value">@request.Group.Name</span>
+                                        </div>
+                                        <div class="detail-item">
+                                            <span class="detail-label">Professor In-Charge:</span>
+                                            <span class="detail-value">@request.ProfInCharge</span>
+                                        </div>
+                                        <div class="detail-item">
+                                            <span class="detail-label">Purpose:</span>
+                                            <span class="detail-value">@request.Purpose</span>
+                                        </div>
+                                        <div class="button-group">
+                                            <form method="post" action="@Url.Action("UpdateRequestStatus", "Admin")" style="display: inline;">
+                                                <input type="hidden" name="id" value="@request.RequestId" />
+                                                <input type="hidden" name="status" value="Approved" />
+                                                <button type="submit" class="edit-button approve-button">Approve</button>
+                                            </form>
+                                            <form method="post" action="@Url.Action("UpdateRequestStatus", "Admin")" style="display: inline;">
+                                                <input type="hidden" name="id" value="@request.RequestId" />
+                                                <input type="hidden" name="status" value="Declined" />
+                                                <button type="submit" class="discard-button decline-button">Decline</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="empty-state">No pending requests found.</div>
+                        }
+                    </div>
+
+                    <div id="cancelled-content" class="tab-content">
+                        @if (ViewData["Declined"] != null && ((List<Request>)ViewData["Declined"]).Any())
+                        {
+                            foreach (var request in (List<Request>)ViewData["Declined"])
+                            {
+                                <div class="reservation-item">
+                                    <div class="reservation-header">
+                                        <div class="reservation-info">
+                                            <span>Date: @request.Date.ToString("MMMM dd, yyyy")</span>
+                                            @{
+                                                var startTime = new DateTime().Add(request.Period.StartTime);
+                                                var endTime = new DateTime().Add(request.Period.EndTime);
+                                            }
+                                            <span>Time: @startTime.ToString("hh:mm tt") - @endTime.ToString("hh:mm tt")</span>
+                                        </div>
+                                        <div class="status-badge status-rejected">@request.Status.ToUpper()</div>
+                                    </div>
+                                    <div class="reservation-details">
+                                        <div class="detail-item">
+                                            <span class="detail-label">Category:</span>
+                                            <span class="detail-value">@request.Group.Category</span>
+                                        </div>
+                                        <div class="detail-item">
+                                            <span class="detail-label">Group Name:</span>
+                                            <span class="detail-value">@request.Group.Name</span>
+                                        </div>
+                                        <div class="detail-item">
+                                            <span class="detail-label">Professor In-Charge:</span>
+                                            <span class="detail-value">@request.ProfInCharge</span>
+                                        </div>
+                                        <div class="detail-item">
+                                            <span class="detail-label">Purpose:</span>
+                                            <span class="detail-value">@request.Purpose</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="empty-state">No cancelled/declined requests found.</div>
+                        }
                     </div>
                 </div>
             </div>
@@ -70,214 +455,90 @@
 </div>
 
 @section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
-        function switchTab(tabName) {
+        function switchTab(event, tabName) {
             // Hide all tab content
             const tabContents = document.querySelectorAll('.tab-content');
-            tabContents.forEach(content => content.style.display = 'none');
+            tabContents.forEach(content => content.classList.remove('active'));
 
             // Remove active class from all tabs
             const tabs = document.querySelectorAll('.tab');
             tabs.forEach(tab => tab.classList.remove('active'));
 
             // Show selected tab content
-            document.getElementById(tabName + '-content').style.display = 'block';
+            document.getElementById(tabName + '-content').classList.add('active');
 
             // Add active class to clicked tab
-            event.target.classList.add('active');
+            event.currentTarget.classList.add('active');
         }
 
-        // Add click event listeners to request items for interactivity
-        document.querySelectorAll('.request-item').forEach(item => {
-            item.addEventListener('click', function() {
-                this.style.transform = 'scale(0.98)';
-                setTimeout(() => {
-                    this.style.transform = 'scale(1)';
-                }, 150);
+        async function confirmAction(form, action) {
+            let title = '';
+            let text = '';
+            let confirmButtonColor = '';
+
+            if (action === 'Approve') {
+                title = 'Approve Request?';
+                text = 'You are about to approve this request.';
+                confirmButtonColor = '#00bf63'; // Green
+            } else if (action === 'Decline') {
+                title = 'Decline Request?';
+                text = 'You are about to decline this request.';
+                confirmButtonColor = '#dc3545'; // Red
+            }
+
+            const result = await Swal.fire({
+                title: title,
+                text: text,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: confirmButtonColor,
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: `Yes, ${action} it!`
+            });
+
+            return result.isConfirmed;
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Add event listeners for Approve buttons
+            document.querySelectorAll('.approve-button').forEach(button => {
+                button.addEventListener('click', async (e) => {
+                    e.preventDefault(); // Prevent default form submission
+                    const form = e.target.closest('form');
+                    if (form && await confirmAction(form, 'Approve')) {
+                        form.submit();
+                    }
+                });
+            });
+
+            // Add event listeners for Decline buttons
+            document.querySelectorAll('.decline-button').forEach(button => {
+                button.addEventListener('click', async (e) => {
+                    e.preventDefault(); // Prevent default form submission
+                    const form = e.target.closest('form');
+                    if (form && await confirmAction(form, 'Decline')) {
+                        form.submit();
+                    }
+                });
+            });
+
+            // Initial active tab setting and general reservation item click handler
+            document.getElementById('approved-content').classList.add('active');
+            document.querySelector('.tab').classList.add('active');
+
+            document.querySelectorAll('.reservation-item').forEach(item => {
+                item.addEventListener('click', function(e) {
+                    // Only toggle if the click wasn't on a form element itself
+                    if (!e.target.closest('form')) {
+                        const detailsDiv = this.querySelector('.reservation-details');
+                        if (detailsDiv) {
+                            detailsDiv.classList.toggle('expanded');
+                        }
+                    }
+                });
             });
         });
     </script>
 }
-
-<style>
-    .admin-manage-outer {
-        min-height: calc(100vh - 120px); /* Adjust 120px to match your header+footer height */
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 40px 0;
-        background-image: url('/Images/AdminsBG.jpg');
-        background-repeat: no-repeat;
-        background-size: cover;
-        background-position: center;
-        box-sizing: border-box;
-    }
-
-    .container {
-        max-width: 800px;
-        width: 100%;
-        margin: 0 auto;
-        padding: 0 20px;
-    }
-
-    .requests-title {
-        color: #970c10;
-        font-size: 32px;
-        font-weight: bold;
-        margin-bottom: 30px;
-        text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
-        text-align: center;
-    }
-
-    .requests-card {
-        background: white;
-        border-radius: 15px;
-        overflow: hidden;
-        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-    }
-
-    .tabs-container {
-        display: flex;
-        border-bottom: 1px solid #eee;
-    }
-
-    .tab {
-        flex: 1;
-        padding: 15px 20px;
-        text-align: center;
-        background: #f8f8f8;
-        color: #666;
-        cursor: pointer;
-        font-weight: bold;
-        border: none;
-        font-size: 14px;
-        transition: all 0.3s ease;
-    }
-
-        .tab:first-child {
-            border-top-left-radius: 15px;
-        }
-
-        .tab.active {
-            background-color: #970c10;
-            color: white;
-        }
-
-        .tab:not(.active):hover {
-            background-color: #eee;
-        }
-
-    .requests-content {
-        padding: 25px;
-        min-height: 300px;
-    }
-
-    .request-item {
-        background: white;
-        border: 2px solid #ddd;
-        border-radius: 8px;
-        margin-bottom: 15px;
-        overflow: hidden;
-        transition: all 0.3s ease;
-    }
-
-        .request-item:hover {
-            border-color: #970c10;
-            box-shadow: 0 4px 12px rgba(151, 12, 16, 0.1);
-        }
-
-    .request-header {
-        background-color: #970c10;
-        color: white;
-        padding: 12px 20px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    .request-info {
-        display: flex;
-        gap: 30px;
-        font-size: 14px;
-        font-weight: bold;
-    }
-
-    .status-badge {
-        padding: 6px 15px;
-        border-radius: 20px;
-        font-size: 12px;
-        font-weight: bold;
-        color: white;
-    }
-
-    .status-declined {
-        background-color: #970c10;
-    }
-
-    .status-cancelled {
-        background-color: #666;
-    }
-
-    .request-details {
-        padding: 15px 20px;
-        background: #f9f9f9;
-        display: flex;
-        gap: 40px;
-        font-size: 13px;
-    }
-
-    .detail-item {
-        display: flex;
-        flex-direction: column;
-    }
-
-    .detail-label {
-        font-weight: bold;
-        color: #970c10;
-        font-style: italic;
-        margin-bottom: 3px;
-    }
-
-    .detail-value {
-        color: #333;
-    }
-
-    @@media (max-width: 900px) {
-        .container
-
-    {
-        max-width: 98vw;
-        padding: 0 2vw;
-    }
-
-    .requests-content {
-        padding: 16px;
-    }
-
-    .request-details {
-        flex-direction: column;
-        gap: 10px;
-    }
-
-    }
-    @@media (max-width: 600px) {
-        .admin-manage-outer
-
-    {
-        padding: 10px 0;
-    }
-
-    .container {
-        padding: 0 1vw;
-    }
-
-    .requests-title {
-        font-size: 22px;
-    }
-
-    .requests-content {
-        padding: 8px;
-    }
-
-    }
-</style>
