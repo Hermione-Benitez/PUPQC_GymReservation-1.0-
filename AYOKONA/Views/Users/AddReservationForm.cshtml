@@ -1,4 +1,6 @@
-﻿@{
+﻿@model AYOKONA.Models.ReservationFormViewModel
+
+@{
     ViewData["Title"] = "Reservation Form";
     Layout = "~/Views/Shared/Students_Layout.cshtml";
 }
@@ -151,6 +153,10 @@
                     background-color: #fff;
                 }
 
+        .hidden {
+            display: none !important;
+        }
+
         @@media (max-width: 768px) {
             .reservation-form-container {
                 padding: 1.5rem;
@@ -198,6 +204,28 @@
                 font-size: 1rem;
             }
         }
+
+        /* Add styles for unavailable dates */
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            cursor: pointer;
+        }
+
+        input[type="date"]:disabled {
+            background-color: #ffcccc;
+            cursor: not-allowed;
+        }
+
+        /* Style for dates with Whole Day reservations */
+        .whole-day-reserved {
+            color: #ff0000 !important;
+            background-color: #ffcccc !important;
+        }
+
+        /* Style for fully booked dates */
+        .fully-booked {
+            color: #ff0000 !important;
+            background-color: #ffcccc !important;
+        }
     </style>
 }
 
@@ -206,35 +234,63 @@
         <h2 class="form-heading">Reservation Form</h2>
 
         <div class="reservation-form-container">
-            <form action="/User/SubmitReservation" method="post">
+            <form action="/Users/SubmitReservation" method="post">
+                @* IMPORTANT: Added Anti-Forgery Token for security *@
+                @Html.AntiForgeryToken()
+                @* IMPORTANT: Added to display all server-side validation errors *@
+                <div asp-validation-summary="All" class="text-danger"></div>
+
                 <div class="form-group">
                     <label for="category">Category</label>
                     <select id="category" name="Category" required>
                         <option value="">Select Category</option>
-                        <option value="Academic Class">Academic Class</option>
-                        <option value="Organization">Organization</option>
+                        @* IMPORTANT: Value changed to "section" to match DB constraint. Removed C# selected logic. *@
+                        <option value="section">Academic Class</option>
+                        @* IMPORTANT: Value changed to "org" to match DB constraint. Removed C# selected logic. *@
+                        <option value="org">Organization</option>
                     </select>
+                    @* Added: Validation message for Category field *@
+                    <span asp-validation-for="Category" class="text-danger"></span>
                 </div>
 
                 <div class="form-group-row">
                     <div>
-                        <label for="name">Name <span style="font-weight: normal; font-size: 0.85em;"></span></label>
-                        <input type="text" id="name" name="Name" value="@ViewData["Fullname"]" readonly>
+                        <label for="name">Name <span></span></label>
+                        @* IMPORTANT: Changed to @Model.Name for auto-generation *@
+                        <input type="text" id="name" name="Name" value="@Model.Name" readonly>
                     </div>
-                    <div>
-                        <label for="section">Course / Year / Section <span style="font-weight: normal; font-size: 0.85em;"></span></label>
-                        <input type="text" id="section" name="Section" value="@ViewData["Section"]" readonly>
+
+                    <div id="sectionAcademicGroup">
+                        <label for="sectionAcademic">Course / Year / Section <span></span></label>
+                        @* IMPORTANT: Changed to @Model.Section for auto-generation *@
+                        <input type="text" id="sectionAcademic" name="SectionAcademic" value="@Model.Section" readonly>
+                        @* Added: Validation message for Section (assuming SectionAcademic maps to Model.Section) *@
+                        <span asp-validation-for="Section" class="text-danger"></span>
+                    </div>
+
+                    <div id="organizationGroup" class="hidden">
+                        <label for="organization">Organization</label>
+                        <select id="organization" name="OrganizationName">
+                            <option value="">Select Organization</option>
+                            @* IMPORTANT: Retained dynamic loading via JS. The selected value will be set by JS. *@
+                        </select>
+                        @* Added: Validation message for OrganizationName *@
+                        <span asp-validation-for="OrganizationName" class="text-danger"></span>
                     </div>
                 </div>
 
                 <div class="form-group">
                     <label for="professorInCharge">Professor In-Charge</label>
-                    <input type="text" id="professorInCharge" name="ProfessorInCharge" required>
+                    <input type="text" id="professorInCharge" name="ProfessorInCharge" value="@Model.ProfessorInCharge" required> @* Added value binding *@
+                    @* Added: Validation message for ProfessorInCharge *@
+                    <span asp-validation-for="ProfessorInCharge" class="text-danger"></span>
                 </div>
 
                 <div class="form-group">
                     <label for="purposeOfUse">Purpose of Use</label>
-                    <textarea id="purposeOfUse" name="PurposeOfUse" maxlength="200" required></textarea>
+                    <textarea id="purposeOfUse" name="PurposeOfUse" maxlength="200" required>@Model.PurposeOfUse</textarea> @* Added value binding *@
+                    @* Added: Validation message for PurposeOfUse *@
+                    <span asp-validation-for="PurposeOfUse" class="text-danger"></span>
                     <div class="character-count">
                         <span id="purposeCharCount">0</span>/200 characters
                     </div>
@@ -245,19 +301,26 @@
                     <div class="date-time-group">
                         <div class="form-group">
                             <label for="reservationDate">Date</label>
-                            <input type="date" id="reservationDate" name="ReservationDate" required>
+                            <input type="date" id="reservationDate" name="ReservationDate" required
+                                   min="@DateTime.Today.AddDays(1).ToString("yyyy-MM-dd")"
+                                   value="@Model.ReservationDate.ToString("yyyy-MM-dd")" />
+                            <span asp-validation-for="ReservationDate" class="text-danger"></span>
                         </div>
                         <div class="form-group">
                             <label for="reservationTime">Time</label>
-                            <select id="reservationTime" name="ReservationTime" required>
+                            @* IMPORTANT: Changed 'name' attribute to PeriodId for robust lookup. Removed C# selected logic. *@
+                            <select id="reservationTime" name="PeriodId" required>
                                 <option value="">Select Time</option>
-                                <option value="7:30 AM - 10:30 AM">7:30 AM - 10:30 AM</option>
-                                <option value="10:30 AM - 1:30 PM">10:30 AM - 1:30 PM</option>
-                                <option value="1:30 PM - 4:30 PM">1:30 PM - 4:30 PM</option>
-                                <option value="4:30 PM - 7:30 PM">4:30 PM - 7:30 PM</option>
-                                <option value="7:30 PM - 8:30 PM">7:30 PM - 8:30 PM</option>
-                                <option value="Whole Day">Whole Day</option>
+                                @* IMPORTANT: Placeholder PeriodIds are used here. You must ensure these match your actual PeriodIds in dbo.Periods. *@
+                                <option value="1">7:30 AM - 10:30 AM</option>
+                                <option value="2">10:30 AM - 1:30 PM</option>
+                                <option value="3">1:30 PM - 4:30 PM</option>
+                                <option value="4">4:30 PM - 7:30 PM</option>
+                                <option value="5">7:30 PM - 8:30 PM</option>
+                                <option value="6">Whole Day</option>
                             </select>
+                            @* Added: Validation message for PeriodId *@
+                            <span asp-validation-for="PeriodId" class="text-danger"></span>
                         </div>
                     </div>
                 </div>
@@ -271,31 +334,460 @@
 </div>
 
 @section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+    <script src="~/lib/jquery-validation-unobtrusive/dist/jquery.validate.unobtrusive.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <script>
-        // Character counter for Purpose of Use
-        document.addEventListener('DOMContentLoaded', function() {
+        // These are declared inside $(document).ready for proper scoping
+        let yyyy, mm, dd, todayString;
+
+        $(document).ready(function() {
+            // Declare and assign values inside ready function to ensure scope and timing
+            const approvedSlots = @(ViewData["ApprovedSlots"] != null ? Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(ViewData["ApprovedSlots"])) : Html.Raw("[]"));
+            const fullyBookedSlots = @(ViewData["FullyBookedSlots"] != null ? Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(ViewData["FullyBookedSlots"])) : Html.Raw("[]"));
+            const blockingSlots = @(ViewData["BlockingSlots"] != null ? Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(ViewData["BlockingSlots"])) : Html.Raw("[]"));
+            
+            console.log('Approved slots:', approvedSlots);
+            console.log('Fully booked slots:', fullyBookedSlots);
+            console.log('Blocking slots (group-specific):', blockingSlots);
+
+            // Function to check if section/organization is already reserved and not completed
+            function isSectionOrOrgReserved(date, periodId, category) {
+                const sectionOrOrgValue = category === 'section' ? 
+                    document.getElementById('sectionAcademic').value : 
+                    // For organization, get the text of the selected option, not its value
+                    $('#organization option:selected').text();
+                
+                console.log('Checking for duplicate reservation:', {
+                    date: date,
+                    periodId: periodId,
+                    category: category,
+                    sectionOrOrgValue: sectionOrOrgValue
+                });
+
+                // Check against blocking slots (ongoing reservations or pending requests for the specific group)
+                const isBlocked = blockingSlots.some(slot => {
+                    const slotDate = slot.date.substring(0, 10); // Assuming date is ISO string
+
+                    const matchesCategoryAndValue = 
+                        (category === 'section' && slot.groupCategory === 'section' && slot.groupName === sectionOrOrgValue) ||
+                        (category === 'org' && slot.groupCategory === 'org' && slot.groupName === sectionOrOrgValue);
+
+                    const match = slotDate === date && 
+                                  slot.periodId == periodId && 
+                                  matchesCategoryAndValue;
+
+                    console.log('  Comparing slot:', { slotDate, slotPeriodId: slot.periodId, slotGroupCategory: slot.groupCategory, slotGroupName: slot.groupName });
+                    console.log('  Comparison results:', { dateMatch: slotDate === date, periodMatch: slot.periodId == periodId, categoryValueMatch: matchesCategoryAndValue, overallMatch: match });
+
+                    if (match) {
+                        console.log('Found blocking slot:', slot);
+                    }
+                    return match;
+                });
+                console.log('Is section/org reserved?', isBlocked);
+                return isBlocked;
+            }
+
+            // New function to determine completely unavailable dates
+            function getUnavailableDatesList() {
+                const list = new Set(); // Use a Set to store unique dates
+
+                // Check for PeriodId 6 (Whole Day) in approved or fully booked slots
+                approvedSlots.forEach(slot => {
+                    if (slot.PeriodId == 6) {
+                        list.add(slot.Date.substring(0, 10));
+                    }
+                });
+                fullyBookedSlots.forEach(slot => {
+                    if (slot.PeriodId == 6) {
+                        list.add(slot.Date.substring(0, 10));
+                    }
+                });
+
+                // Check for dates where all periods 1-5 are covered
+                const allIndividualPeriods = ['1', '2', '3', '4', '5']; // Using strings for comparison
+                const allKnownSlots = [...approvedSlots, ...fullyBookedSlots];
+
+                const groupedByDate = {};
+                allKnownSlots.forEach(slot => {
+                    const dateKey = slot.Date.substring(0, 10);
+                    if (!groupedByDate[dateKey]) {
+                        groupedByDate[dateKey] = new Set();
+                    }
+                    groupedByDate[dateKey].add(String(slot.PeriodId)); // Ensure string for comparison
+                });
+
+                for (const dateKey in groupedByDate) {
+                    let allCovered = true;
+                    for (const pId of allIndividualPeriods) {
+                        if (!groupedByDate[dateKey].has(pId)) {
+                            allCovered = false;
+                            break;
+                        }
+                    }
+                    if (allCovered) {
+                        list.add(dateKey);
+                    }
+                }
+                return Array.from(list);
+            }
+
+            // Get the list of unavailable dates
+            const unavailableDates = getUnavailableDatesList();
+            console.log('Unavailable dates:', unavailableDates);
+
+            // Function to get dates with Whole Day reservations
+            function getWholeDayReservedDates() {
+                const wholeDayDates = new Set();
+                approvedSlots.forEach(slot => {
+                    if (slot.PeriodId == 6) {
+                        wholeDayDates.add(slot.Date.substring(0, 10));
+                    }
+                });
+                fullyBookedSlots.forEach(slot => {
+                    if (slot.PeriodId == 6) {
+                        wholeDayDates.add(slot.Date.substring(0, 10));
+                    }
+                });
+                return Array.from(wholeDayDates);
+            }
+
+            // Function to get fully booked dates
+            function getFullyBookedDates() {
+                const fullyBookedDates = new Set();
+                const allIndividualPeriods = ['1', '2', '3', '4', '5'];
+                const allKnownSlots = [...approvedSlots, ...fullyBookedSlots];
+                const groupedByDate = {};
+
+                allKnownSlots.forEach(slot => {
+                    const dateKey = slot.Date.substring(0, 10);
+                    if (!groupedByDate[dateKey]) {
+                        groupedByDate[dateKey] = new Set();
+                    }
+                    groupedByDate[dateKey].add(String(slot.PeriodId));
+                });
+
+                for (const dateKey in groupedByDate) {
+                    let allCovered = true;
+                    for (const pId of allIndividualPeriods) {
+                        if (!groupedByDate[dateKey].has(pId)) {
+                            allCovered = false;
+                            break;
+                        }
+                    }
+                    if (allCovered) {
+                        fullyBookedDates.add(dateKey);
+                    }
+                }
+                return Array.from(fullyBookedDates);
+            }
+
+            // Get the lists of unavailable dates
+            const wholeDayDates = getWholeDayReservedDates();
+            const fullyBookedDates = getFullyBookedDates();
+            console.log('Whole Day reserved dates:', wholeDayDates);
+            console.log('Fully booked dates:', fullyBookedDates);
+
+            // Set up the date input
+            const reservationDateInput = document.getElementById('reservationDate');
+            if (reservationDateInput) {
+                // Set min date to tomorrow
+                const tomorrow = new Date();
+                tomorrow.setDate(tomorrow.getDate() + 1);
+                const tomorrowString = tomorrow.toISOString().split('T')[0];
+                reservationDateInput.setAttribute('min', tomorrowString);
+
+                // Add event listener for date changes
+                reservationDateInput.addEventListener('change', function() {
+                    const selectedDate = this.value;
+                    
+                    // Check if the selected date has a Whole Day reservation
+                    if (wholeDayDates.includes(selectedDate)) {
+                        this.classList.add('whole-day-reserved');
+                        Swal.fire({
+                            title: 'Date Unavailable',
+                            text: 'This date has a whole-day reservation. Please select another date.',
+                            icon: 'warning',
+                            confirmButtonText: 'OK'
+                        });
+                        this.value = ''; // Clear the selection
+                        this.classList.remove('whole-day-reserved');
+                        return;
+                    }
+
+                    // Check if the selected date is fully booked
+                    if (fullyBookedDates.includes(selectedDate)) {
+                        this.classList.add('fully-booked');
+                        Swal.fire({
+                            title: 'Date Unavailable',
+                            text: 'This date is fully booked. Please select another date.',
+                            icon: 'warning',
+                            confirmButtonText: 'OK'
+                        });
+                        this.value = ''; // Clear the selection
+                        this.classList.remove('fully-booked');
+                        return;
+                    }
+
+                    // Check if the selected date is today
+                    const today = new Date();
+                    const todayString = today.toISOString().split('T')[0];
+                    if (selectedDate === todayString) {
+                        Swal.fire({
+                            title: 'Invalid Date',
+                            text: 'Reservations cannot be made for the current day. Please select a future date.',
+                            icon: 'warning',
+                            confirmButtonText: 'OK'
+                        });
+                        this.value = ''; // Clear the selection
+                        return;
+                    }
+
+                    // Update time options based on the new date
+                    updateTimeOptions();
+                });
+
+                // Add event listener for input to prevent manual entry of unavailable dates
+                reservationDateInput.addEventListener('input', function() {
+                    const selectedDate = this.value;
+                    
+                    if (wholeDayDates.includes(selectedDate)) {
+                        this.classList.add('whole-day-reserved');
+                        Swal.fire({
+                            title: 'Date Unavailable',
+                            text: 'This date has a whole-day reservation. Please select another date.',
+                            icon: 'warning',
+                            confirmButtonText: 'OK'
+                        });
+                        this.value = ''; // Clear the selection
+                        this.classList.remove('whole-day-reserved');
+                    }
+                    else if (fullyBookedDates.includes(selectedDate)) {
+                        this.classList.add('fully-booked');
+                        Swal.fire({
+                            title: 'Date Unavailable',
+                            text: 'This date is fully booked. Please select another date.',
+                            icon: 'warning',
+                            confirmButtonText: 'OK'
+                        });
+                        this.value = ''; // Clear the selection
+                        this.classList.remove('fully-booked');
+                    }
+                });
+            }
+
+            function updateTimeOptions() {
+                const selectedDate = document.getElementById('reservationDate').value;
+                const timeSelect = document.getElementById('reservationTime');
+                // Enable all options first
+                for (let i = 0; i < timeSelect.options.length; i++) {
+                    timeSelect.options[i].disabled = false;
+                    timeSelect.options[i].style.backgroundColor = '';
+                    timeSelect.options[i].style.color = '';
+                }
+                if (!selectedDate) return;
+
+                // Disable slots with approved requests
+                approvedSlots.forEach(slot => {
+                    // slot.Date is in ISO format, so compare as yyyy-MM-dd
+                    const slotDate = slot.Date.substring(0, 10);
+                    if (slotDate === selectedDate) {
+                        // Find the option with value == slot.PeriodId
+                        for (let i = 0; i < timeSelect.options.length; i++) {
+                            if (timeSelect.options[i].value == slot.PeriodId) {
+                                timeSelect.options[i].disabled = true;
+                                timeSelect.options[i].style.backgroundColor = '#ffcccc';
+                                timeSelect.options[i].style.color = '#b30000';
+                            }
+                        }
+                    }
+                });
+
+                // Disable fully booked slots
+                fullyBookedSlots.forEach(slot => {
+                    const slotDate = slot.Date.substring(0, 10);
+                    if (slotDate === selectedDate) {
+                        for (let i = 0; i < timeSelect.options.length; i++) {
+                            if (timeSelect.options[i].value == slot.PeriodId) {
+                                timeSelect.options[i].disabled = true;
+                                timeSelect.options[i].style.backgroundColor = '#ffcccc'; // Red background
+                                timeSelect.options[i].style.color = '#b30000'; // Darker red text
+                            }
+                        }
+                    }
+                });
+            }
+
+            const categorySelect = $('#category');
+            const sectionAcademicGroup = $('#sectionAcademicGroup');
+            const organizationGroup = $('#organizationGroup');
+            const organizationSelect = $('#organization');
+            const sectionAcademicInput = $('#sectionAcademic');
+
+            const organizationsList = [
+                { id: "byp", name: "BYP" },
+                { id: "cbi", name: "CBI" },
+                { id: "chrs", name: "CHRS" },
+                { id: "col", name: "COL" },
+                { id: "commits", name: "COMMITS" },
+                { id: "domtcs", name: "DOMT.Cs" },
+                { id: "fbto", name: "FBTO" },
+                { id: "jms", name: "JMS" },
+                { id: "kataga", name: "KATAGA" },
+                { id: "musa", name: "MUSA" },
+                { id: "rcy", name: "RCY" },
+                { id: "spas", name: "SPAS" },
+                { id: "srg", name: "SRG" },
+                { id: "ssc", name: "SSC" },
+                { id: "voxnova", name: "VOX NOVA" },
+                { id: "yes", name: "YES" }
+            ];
+
+            function loadOrganizations() {
+                if (organizationSelect.find('option').length > 1) {
+                    return;
+                }
+
+                organizationSelect.empty();
+                organizationSelect.append($('<option>').val('').text('Select Organization'));
+                $.each(organizationsList, function(i, org) {
+                    organizationSelect.append($('<option>').val(org.id).text(org.name));
+                });
+            }
+
+            function updateFormFieldsVisibility() {
+                if (categorySelect.val() === 'org') {
+                    sectionAcademicGroup.addClass('hidden');
+                    sectionAcademicInput.prop('required', false);
+
+                    organizationGroup.removeClass('hidden');
+                    organizationSelect.prop('required', true);
+                    loadOrganizations();
+
+                    const modelOrgName = '@(Model.OrganizationName)';
+                    if (modelOrgName && modelOrgName !== '') {
+                        organizationSelect.find('option').filter(function() {
+                            return $(this).text() === modelOrgName;
+                        }).prop('selected', true);
+                    }
+
+                } else if (categorySelect.val() === 'section') {
+                    sectionAcademicGroup.removeClass('hidden');
+                    sectionAcademicInput.prop('required', true);
+
+                    organizationGroup.addClass('hidden');
+                    organizationSelect.prop('required', false);
+                    organizationSelect.val('');
+                } else {
+                    sectionAcademicGroup.addClass('hidden');
+                    sectionAcademicInput.prop('required', false);
+                    organizationGroup.addClass('hidden');
+                    organizationSelect.prop('required', false);
+                    organizationSelect.val('');
+                }
+            }
+
+            updateFormFieldsVisibility();
+
+            categorySelect.on('change', updateFormFieldsVisibility);
+
+            // Set selected category on load from Model
+            const modelCategory = '@(Model.Category)';
+            if (modelCategory && modelCategory !== '') {
+                categorySelect.val(modelCategory);
+                updateFormFieldsVisibility(); // Re-call to update visibility based on selected category
+            }
+
+            // Set selected time period on load from Model
+            const modelPeriodId = '@(Model.PeriodId)';
+            if (modelPeriodId && modelPeriodId !== '0') {
+                $('#reservationTime').val(modelPeriodId);
+            }
+
             const purposeOfUse = document.getElementById('purposeOfUse');
             const purposeCharCount = document.getElementById('purposeCharCount');
-            const maxLength = purposeOfUse.getAttribute('maxlength');
 
             if (purposeOfUse && purposeCharCount) {
+                purposeCharCount.textContent = purposeOfUse.value.length;
                 purposeOfUse.addEventListener('input', function() {
                     const currentLength = this.value.length;
                     purposeCharCount.textContent = currentLength;
                 });
             }
 
-            // Optional: Set default date to today for convenience
+            // Assign today's date variables
             const today = new Date();
-            const yyyy = today.getFullYear();
-            const mm = String(today.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
-            const dd = String(today.getDate()).padStart(2, '0');
-            const todayString = `${yyyy}-${mm}-${dd}`;
+            yyyy = today.getFullYear();
+            mm = String(today.getMonth() + 1).padStart(2, '0');
+            dd = String(today.getDate()).padStart(2, '0');
+            todayString = `${yyyy}-${mm}-${dd}`;
 
-            const reservationDateInput = document.getElementById('reservationDate');
-            if (reservationDateInput) {
-                // Set min date to today to prevent selecting past dates
-                reservationDateInput.setAttribute('min', todayString);
+            // Calculate tomorrow's date
+            const tomorrow = new Date(today);
+            tomorrow.setDate(today.getDate() + 1);
+            const tomorrowYyyy = tomorrow.getFullYear();
+            const tomorrowMm = String(tomorrow.getMonth() + 1).padStart(2, '0');
+            const tomorrowDd = String(tomorrow.getDate()).padStart(2, '0');
+            const tomorrowString = `${tomorrowYyyy}-${tomorrowMm}-${tomorrowDd}`;
+
+            // Add form submission validation
+            $('form').on('submit', function(e) {
+                console.log('Form submission attempted.'); // Debug log
+                const category = $('#category').val();
+                const date = $('#reservationDate').val();
+                const periodId = $('#reservationTime').val();
+                
+                if (isSectionOrOrgReserved(date, periodId, category)) {
+                    e.preventDefault();
+                    const sectionOrOrg = category === 'section' ? 
+                        $('#sectionAcademic').val() : 
+                        $('#organization option:selected').text();
+                    alert(`There is already a reservation for ${sectionOrOrg} on ${date} during this time period. Please select a different date or time.`);
+                    return false;
+                }
+            });
+
+            // Add validation when time period changes
+            $('#reservationTime').on('change', function() {
+                console.log('Reservation time changed.'); // Debug log
+                const category = $('#category').val();
+                const date = $('#reservationDate').val();
+                const periodId = $(this).val();
+                
+                if (isSectionOrOrgReserved(date, periodId, category)) {
+                    e.preventDefault();
+                    const sectionOrOrg = category === 'section' ? 
+                        $('#sectionAcademic').val() : 
+                        $('#organization option:selected').text();
+                    alert(`There is already a reservation for ${sectionOrOrg} on ${date} during this time period. Please select a different time.`);
+                    $(this).val(''); // Reset the selection
+                }
+            });
+
+            document.getElementById('reservationTime').addEventListener('change', updateTimeOptions);
+            updateTimeOptions(); // Initial call to update time options
+            
+            // Initial check for date input styling in case a pre-filled date is unavailable
+            const initialDateValue = document.getElementById('reservationDate').value;
+            if (initialDateValue && getUnavailableDatesList().includes(initialDateValue)) {
+                document.getElementById('reservationDate').style.borderColor = '#b30000';
+                document.getElementById('reservationDate').style.backgroundColor = '#ffcccc';
+            }
+
+            // Check for submission success
+            @if (TempData["SubmissionSuccess"] != null)
+            {
+                <text>
+                Swal.fire({
+                    title: 'Success!',
+                    text: 'Your reservation has been submitted successfully.',
+                    icon: 'success',
+                    confirmButtonText: 'OK'
+                });
+                </text>
             }
         });
     </script>

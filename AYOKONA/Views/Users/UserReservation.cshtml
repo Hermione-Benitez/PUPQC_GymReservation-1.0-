@@ -1,51 +1,314 @@
 ﻿@{
-    Layout = "Students_Layout";
+    ViewData["Title"] = "My Reservations";
+    Layout = "~/Views/Shared/Students_Layout.cshtml";
 }
-<!--admin cancelled page (User Reservation)-->
 
-<div class="user-reservation-outer">
-    <div class="main-content">
-        <h1 class="page-title">Your Reservations</h1>
+@section Styles {
+    <style>
+        .user-reservations-outer {
+            min-height: calc(100vh - 120px); /* Adjust 120px to match your header+footer height */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 0;
+            box-sizing: border-box;
+        }
 
-        <div class="tabs-container">
-            <button class="tab active" onclick="showTab('approved')">Approved</button>
-            <button class="tab" onclick="showTab('pending')">Pending</button>
-            <button class="tab" onclick="showTab('cancelled')">Cancelled</button>
-        </div>
+        .container {
+            max-width: 800px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
 
-        <div class="reservation-container">
-            <div id="approved" class="tab-content active">
-                <div class="reservation-item">
-                    <div class="reservation-header">
-                        <div class="date-time-info">
-                            <span>Date: May 1, 2025</span>
-                            <span>Time: May 1, 2025</span>
-                        </div>
-                        <div class="approval-status">Approved on MM/DD/YYYY</div>
-                    </div>
+        .reservations-title {
+            color: #970c10;
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 30px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+            text-align: center;
+        }
 
-                    <div class="reservation-details">
-                        <div class="detail-item">
-                            <span class="detail-label">Category: </span>
-                            <span class="detail-value">Class</span>
-                        </div>
-                        <div class="detail-item">
-                            <span class="detail-label">Course/Year/Section: </span>
-                            <span class="detail-value">BSIT 2-2</span>
-                        </div>
-                    </div>
-                </div>
+        .reservations-card {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+        .tabs-container {
+            display: flex;
+            border-bottom: 1px solid #eee;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 15px 20px;
+            text-align: center;
+            background: #f8f8f8;
+            color: #666;
+            cursor: pointer;
+            font-weight: bold;
+            border: none;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+            .tab:first-child {
+                border-top-left-radius: 15px;
+            }
+
+            .tab:last-child {
+                border-top-right-radius: 15px;
+            }
+
+            .tab.active {
+                background-color: #ffb000;
+                color: white;
+            }
+
+            .tab:not(.active):hover {
+                background-color: #eee;
+            }
+
+        .reservations-content {
+            padding: 25px;
+            min-height: 300px;
+        }
+
+        .reservation-item {
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+            .reservation-item:hover {
+                border-color: #970c10;
+                box-shadow: 0 4px 12px rgba(151, 12, 16, 0.1);
+            }
+
+        .reservation-header {
+            background-color: #ffb000;
+            color: white;
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #ffb000; /* Use user accent color */
+        }
+
+        .reservation-info {
+            display: flex;
+            gap: 30px;
+            font-size: 14px;
+            color: #970c10;
+            font-weight: bold;
+        }
+
+        .status-badge {
+            padding: 6px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            color: white;
+        }
+
+        /* User-specific status colors */
+        .status-approved {
+            background-color: #00bf63;
+            color: white;
+        }
+
+        .status-pending {
+            background-color: #ffb000;
+            color: white;
+        }
+
+        .status-rejected,
+        .status-cancelled {
+            background-color: dimgrey;
+            color: white;
+        }
+
+        .status-completed {
+            background-color: #00bf63;
+            color: white;
+        }
+
+        .reservation-details {
+            padding: 15px 20px;
+            background: #f9f9f9;
+            display: none; /* Hidden by default */
+            flex-direction: column;
+            gap: 10px;
+            font-size: 13px;
+            border-top: 1px solid #eee;
+        }
+
+            .reservation-details.expanded {
+                display: flex;
+            }
+
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .detail-label {
+            font-weight: bold;
+            color: #970c10;
+            font-style: italic;
+            margin-bottom: 3px;
+        }
+
+        .detail-value {
+            color: #333;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #666;
+            padding: 50px;
+            font-style: italic;
+        }
+
+        .tab-content {
+            display: none; /* Hide all tab contents by default */
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @@media (max-width: 900px) {
+            .container {
+                max-width: 98vw;
+                padding: 0 2vw;
+            }
+
+            .reservation-info {
+                flex-direction: column;
+                gap: 5px;
+            }
+        }
+
+        .edit-button, .save-button, .cancel-button, .discard-button {
+            padding: 8px 15px;
+            border-radius: 5px;
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            border: none;
+            margin-top: 10px; /* Space above buttons */
+            margin-left: 10px;
+        }
+
+        .edit-button {
+            background-color: #ffb000;
+            color: white;
+        }
+
+        .edit-button:hover {
+            background-color: #e69500;
+            transform: translateY(-1px);
+        }
+
+        .save-button {
+            background-color: #00bf63;
+            color: white;
+        }
+
+        .save-button:hover {
+            background-color: #00a354;
+            transform: translateY(-1px);
+        }
+
+        .cancel-button {
+            background-color: dimgrey;
+            color: white;
+        }
+
+        .cancel-button:hover {
+            background-color: #555;
+            transform: translateY(-1px);
+        }
+
+        .discard-button {
+            background-color: #dc3545; /* Red color from the image */
+            color: white;
+        }
+
+        .discard-button:hover {
+            background-color: #c82333; /* Darker red on hover */
+            transform: translateY(-1px);
+        }
+
+        .button-group {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 15px; /* Space between details and buttons */
+        }
+
+        .detail-value.read-mode {
+            display: block;
+        }
+
+        .detail-value.edit-mode {
+            display: none;
+        }
+
+        .reservation-item.editing .detail-value.read-mode {
+            display: none;
+        }
+
+        .reservation-item.editing .detail-value.edit-mode {
+            display: block;
+        }
+
+        .detail-value.edit-mode input[type="text"],
+        .detail-value.edit-mode textarea,
+        .detail-value.edit-mode select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+
+        .detail-value.edit-mode textarea {
+            resize: vertical;
+            min-height: 60px;
+        }
+    </style>
+}
+
+<div class="user-reservations-outer">
+    <div class="container">
+        <h2 class="reservations-title">Your Reservations</h2>
+
+        <div class="reservations-card">
+            <div class="tabs-container">
+                <button class="tab active" onclick="switchTab(event, 'approved')">Approved</button>
+                <button class="tab" onclick="switchTab(event, 'pending')">Pending</button>
+                <button class="tab" onclick="switchTab(event, 'cancelled')">Cancelled/Declined</button>
             </div>
 
-            <div id="pending" class="tab-content">
-                <div style="text-align: center; padding: 40px; color: #970c10;">
-                    <p>No pending reservations</p>
+            <div class="reservations-content">
+                <div id="approved-content" class="tab-content active">
+                    <div class="empty-state">Loading approved reservations...</div>
                 </div>
-            </div>
-
-            <div id="cancelled" class="tab-content">
-                <div style="text-align: center; padding: 40px; color: #970c10;">
-                    <p>No cancelled reservations</p>
+                <div id="pending-content" class="tab-content">
+                    <div class="empty-state">Loading pending reservations...</div>
+                </div>
+                <div id="cancelled-content" class="tab-content">
+                    <div class="empty-state">Loading cancelled reservations...</div>
                 </div>
             </div>
         </div>
@@ -53,218 +316,308 @@
 </div>
 
 @section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
-        function showTab(tabName) {
-            // Hide all tab contents
+        const userReservationsData = JSON.parse('@Html.Raw(ViewData["UserReservations"])');
+
+        document.addEventListener('DOMContentLoaded', () => {
+            renderUserReservations();
+            // Set initial active tab
+            document.getElementById('approved-content').classList.add('active');
+            document.querySelector('.tab').classList.add('active');
+        });
+
+        function switchTab(event, tabName) {
+            // Hide all tab content
             const tabContents = document.querySelectorAll('.tab-content');
-            tabContents.forEach(content => {
-                content.classList.remove('active');
-            });
+            tabContents.forEach(content => content.classList.remove('active'));
 
             // Remove active class from all tabs
             const tabs = document.querySelectorAll('.tab');
-            tabs.forEach(tab => {
-                tab.classList.remove('active');
-            });
+            tabs.forEach(tab => tab.classList.remove('active'));
 
             // Show selected tab content
-            document.getElementById(tabName).classList.add('active');
+            document.getElementById(tabName + '-content').classList.add('active');
 
             // Add active class to clicked tab
-            event.target.classList.add('active');
+            event.currentTarget.classList.add('active');
+
+            // Re-render reservations for the active tab (optional, if you want to ensure fresh data for active tab)
+            // This could be optimized if data doesn't change on tab switch
+            renderUserReservations();
+        }
+
+        function renderUserReservations() {
+            const approvedContainer = document.getElementById('approved-content');
+            const pendingContainer = document.getElementById('pending-content');
+            const cancelledContainer = document.getElementById('cancelled-content');
+
+            approvedContainer.innerHTML = '';
+            pendingContainer.innerHTML = '';
+            cancelledContainer.innerHTML = '';
+
+            if (!userReservationsData || userReservationsData.length === 0) {
+                approvedContainer.innerHTML = '<div class="empty-state">You have no reservation records.</div>';
+                pendingContainer.innerHTML = '<div class="empty-state">You have no reservation records.</div>';
+                cancelledContainer.innerHTML = '<div class="empty-state">You have no reservation records.</div>';
+                return;
+            }
+
+            // Sort by Date and then CreatedAt, descending for latest at top
+            userReservationsData.sort((a, b) => {
+                const dateA = new Date(a.Date);
+                const dateB = new Date(b.Date);
+                if (dateB.getTime() !== dateA.getTime()) {
+                    return dateB.getTime() - dateA.getTime();
+                }
+                const createdAtA = new Date(a.CreatedAt);
+                const createdAtB = new Date(b.CreatedAt);
+                return createdAtB.getTime() - createdAtA.getTime();
+            });
+
+            userReservationsData.forEach(reservation => {
+                const reservationDiv = document.createElement('div');
+                reservationDiv.className = 'reservation-item';
+
+                let statusClass = '';
+                let targetContainer = null;
+
+                if (reservation.Status === 'completed') {
+                    statusClass = 'status-completed';
+                    targetContainer = approvedContainer;
+                } else if (reservation.Status === 'ongoing') {
+                    statusClass = 'status-pending';
+                    targetContainer = pendingContainer;
+                } else if (reservation.Status === 'cancelled' || reservation.Status === 'rejected' || reservation.Status === 'declined') {
+                    statusClass = 'status-cancelled';
+                    targetContainer = cancelledContainer;
+                } else if (reservation.Status === 'approved') {
+                    statusClass = 'status-approved'; 
+                    targetContainer = approvedContainer; 
+                }
+
+                const reservationDate = new Date(reservation.Date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+
+                // Format TimeSpan strings to readable time format (e.g., 9:00 AM - 10:00 AM)
+                const formatTime = (timeSpanString) => {
+                    const parts = timeSpanString.split(':');
+                    const hours = parseInt(parts[0], 10);
+                    const minutes = parseInt(parts[1], 10);
+                    const dateForTime = new Date();
+                    dateForTime.setHours(hours);
+                    dateForTime.setMinutes(minutes);
+                    dateForTime.setSeconds(0);
+                    return dateForTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+                };
+
+                const startTimeFormatted = reservation.PeriodStartTime ? formatTime(reservation.PeriodStartTime) : 'N/A';
+                const endTimeFormatted = reservation.PeriodEndTime ? formatTime(reservation.PeriodEndTime) : 'N/A';
+                const timeSlotName = (reservation.PeriodId === 6) ? 'Whole Day' : `${startTimeFormatted} - ${endTimeFormatted}`;
+
+                const originalPurpose = reservation.Purpose || '';
+                const originalProfInCharge = reservation.ProfInCharge || '';
+
+                reservationDiv.innerHTML = `
+                    <div class="reservation-header">
+                        <div class="reservation-info">
+                            <span>Date: ${reservationDate}</span>
+                            <span>Time: ${timeSlotName}</span>
+                        </div>
+                        <div class="status-badge ${statusClass}">${reservation.Status.toUpperCase()}</div>
+                    </div>
+                    <div class="reservation-details">
+                        <div class="detail-item">
+                            <span class="detail-label">Category:</span>
+                            <span class="detail-value read-mode">${reservation.GroupCategory || 'N/A'}</span>
+                            <!-- Category is read-only, no edit-mode input needed -->
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Group Name:</span>
+                            <span class="detail-value read-mode">${reservation.GroupName || 'N/A'}</span>
+                            <!-- Group Name is read-only, no edit-mode input needed -->
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Professor In-Charge:</span>
+                            <span class="detail-value read-mode">${originalProfInCharge}</span>
+                            <span class="detail-value edit-mode">
+                                <input type="text" value="${originalProfInCharge}" data-field="ProfInCharge" />
+                            </span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Purpose:</span>
+                            <span class="detail-value read-mode">${originalPurpose}</span>
+                            <span class="detail-value edit-mode">
+                                <textarea data-field="Purpose">${originalPurpose}</textarea>
+                            </span>
+                        </div>
+                        <div class="button-group">
+                            <button class="edit-button" style="${reservation.Status === 'ongoing' ? '' : 'display: none;'}">Edit</button>
+                            <button class="save-button" style="display: none;">Save</button>
+                            <button class="cancel-button" style="display: none;">Cancel</button>
+                            <button class="discard-button" style="${reservation.Status === 'ongoing' ? '' : 'display: none;'}">Discard</button>
+                        </div>
+                    </div>
+                `;
+
+                if (targetContainer) {
+                    targetContainer.appendChild(reservationDiv);
+                }
+
+                // Toggle details on click
+                reservationDiv.addEventListener('click', function(e) {
+                    // Prevent immediate toggle if an action button is clicked or if we're in edit mode
+                    if (e.target.classList.contains('edit-button') || 
+                        e.target.classList.contains('save-button') || 
+                        e.target.classList.contains('cancel-button') ||
+                        e.target.classList.contains('discard-button') ||
+                        e.target.closest('.edit-mode') || // Check if click is within edit mode elements
+                        this.classList.contains('editing')) { // Check if we're in edit mode
+                        return; 
+                    }
+                    const detailsDiv = this.querySelector('.reservation-details');
+                    if (detailsDiv) {
+                        detailsDiv.classList.toggle('expanded');
+                    }
+                });
+
+                const editButton = reservationDiv.querySelector('.edit-button');
+                const saveButton = reservationDiv.querySelector('.save-button');
+                const cancelButton = reservationDiv.querySelector('.cancel-button');
+                const discardButton = reservationDiv.querySelector('.discard-button');
+                const detailsDiv = reservationDiv.querySelector('.reservation-details');
+                
+                // Store original values for cancel functionality
+                const initialPurpose = originalPurpose;
+                const initialProfInCharge = originalProfInCharge;
+
+                if (editButton) {
+                    editButton.addEventListener('click', (e) => {
+                        e.stopPropagation(); // Prevent event from bubbling up
+                        reservationDiv.classList.add('editing');
+                        editButton.style.display = 'none';
+                        saveButton.style.display = 'inline-block';
+                        cancelButton.style.display = 'inline-block';
+                        discardButton.style.display = 'none'; // Hide discard button while editing
+
+                        // Show expanded details if not already
+                        if (!detailsDiv.classList.contains('expanded')) {
+                            detailsDiv.classList.add('expanded');
+                        }
+                    });
+                }
+
+                if (cancelButton) {
+                    cancelButton.addEventListener('click', (e) => {
+                        e.stopPropagation(); // Prevent event from bubbling up
+                        reservationDiv.classList.remove('editing');
+                        editButton.style.display = 'inline-block';
+                        saveButton.style.display = 'none';
+                        cancelButton.style.display = 'none';
+                        discardButton.style.display = 'inline-block'; // Show discard button again
+
+                        // Revert inputs to original values
+                        reservationDiv.querySelector('textarea[data-field="Purpose"]').value = initialPurpose;
+                        reservationDiv.querySelector('input[data-field="ProfInCharge"]').value = initialProfInCharge;
+                    });
+                }
+
+                if (discardButton) {
+                    discardButton.addEventListener('click', async (e) => {
+                        e.stopPropagation(); // Prevent event from bubbling up
+                        
+                        // Show confirmation dialog
+                        const result = await Swal.fire({
+                            title: 'Are you sure?',
+                            text: "This will cancel your reservation. This action cannot be undone!",
+                            icon: 'warning',
+                            showCancelButton: true,
+                            confirmButtonColor: '#dc3545',
+                            cancelButtonColor: '#6c757d',
+                            confirmButtonText: 'Yes, discard it!'
+                        });
+
+                        if (result.isConfirmed) {
+                            try {
+                                const response = await fetch('/Users/DiscardReservation', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                                    },
+                                    body: JSON.stringify({
+                                        ReservationId: reservation.ReservationId
+                                    })
+                                });
+
+                                const data = await response.json();
+
+                                if (data.success) {
+                                    // Update local data
+                                    reservation.Status = 'cancelled';
+                                    // Re-render to move to cancelled tab
+                                    renderUserReservations();
+                                    Swal.fire('Discarded!', 'Your reservation has been cancelled.', 'success');
+                                } else {
+                                    Swal.fire('Error!', data.message, 'error');
+                                }
+                            } catch (error) {
+                                console.error('Error discarding reservation:', error);
+                                Swal.fire('Error!', 'An unexpected error occurred while discarding the reservation.', 'error');
+                            }
+                        }
+                    });
+                }
+
+                if (saveButton) {
+                    saveButton.addEventListener('click', async (e) => {
+                        e.stopPropagation(); // Prevent event from bubbling up
+                        const newPurpose = reservationDiv.querySelector('textarea[data-field="Purpose"]').value;
+                        const newProfInCharge = reservationDiv.querySelector('input[data-field="ProfInCharge"]').value;
+
+                        try {
+                            const response = await fetch('/Users/UpdateReservation', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                                },
+                                body: JSON.stringify({
+                                    ReservationId: reservation.ReservationId,
+                                    Purpose: newPurpose,
+                                    ProfInCharge: newProfInCharge
+                                })
+                            });
+
+                            const result = await response.json();
+
+                            if (result.success) {
+                                // Update local data and re-render
+                                reservation.Purpose = newPurpose; 
+                                reservation.ProfInCharge = newProfInCharge; 
+                                renderUserReservations(); 
+                                Swal.fire('Saved!', result.message, 'success');
+                            } else {
+                                Swal.fire('Error!', result.message, 'error');
+                            }
+                        } catch (error) {
+                            console.error('Error saving reservation:', error);
+                            Swal.fire('Error!', 'An unexpected error occurred while saving.', 'error');
+                        }
+                    });
+                }
+
+            });
+
+            // If any container is empty after rendering, display the 'no records' message
+            if (approvedContainer.innerHTML === '') {
+                approvedContainer.innerHTML = '<div class="empty-state">No approved or completed reservation records.</div>';
+            }
+            if (pendingContainer.innerHTML === '') {
+                pendingContainer.innerHTML = '<div class="empty-state">No ongoing reservation records.</div>';
+            }
+            if (cancelledContainer.innerHTML === '') {
+                cancelledContainer.innerHTML = '<div class="empty-state">No cancelled or rejected reservation records.</div>';
+            }
         }
     </script>
 }
-
-<style>
-    html, body {
-        height: 100%;
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-        background-image: url('Images/UsersBG.jpg');
-    }
-
-    .user-reservation-outer {
-        min-height: calc(100vh - 120px); /* Adjust 120px to match your header+footer height */
-        display: flex;
-        flex-direction: column;
-        justify-content: flex-start;
-        background-repeat: no-repeat;
-        background-size: cover;
-        background-position: center;
-        width: 100%;
-        box-sizing: border-box;
-    }
-
-    .main-content {
-        flex: 1 0 auto;
-        padding: 30px 20px;
-        max-width: 800px;
-        margin: 40px auto 40px auto;
-        width: 100%;
-        background: rgba(255,255,255,0.95);
-        border-radius: 12px;
-        min-height: 0;
-        display: flex;
-        flex-direction: column;
-    }
-
-    .page-title {
-        color: #970c10;
-        font-size: 28px;
-        font-weight: bold;
-        margin-bottom: 5px;
-    }
-
-    .tabs-container {
-        display: flex;
-    }
-
-    .tab {
-        background: white;
-        border: none;
-        padding: 15px 25px;
-        cursor: pointer;
-        font-size: 14px;
-        font-weight: 600;
-        transition: all 0.3s;
-        flex: 1;
-        color: #970c10;
-    }
-
-        .tab:first-child {
-            border-radius: 8px 0 0 8px;
-        }
-
-        .tab:last-child {
-            border-radius: 0 8px 8px 0;
-        }
-
-        .tab.active {
-            background: #ffb000;
-            color: white;
-        }
-
-        .tab:hover:not(.active) {
-            background: #c0c0c0;
-        }
-
-    .reservation-container {
-        background: white;
-        border-radius: 8px;
-        padding: 20px;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        min-height: 300px;
-        margin-top: 20px;
-        flex: 1 0 auto;
-        display: flex;
-        flex-direction: column;
-    }
-
-    .reservation-item {
-        border: 2px solid #ffb000;
-        border-radius: 8px;
-        margin-bottom: 15px;
-        overflow: hidden;
-        background: white;
-        cursor: pointer;
-    }
-
-        .reservation-item:hover {
-            border-color: #ffb000;
-            box-shadow: 0 4px 12px rgba(151, 12, 16, 0.1);
-        }
-
-    .reservation-header {
-        background: #ffb000;
-        padding: 10px 20px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    .date-time-info {
-        display: flex;
-        gap: 30px;
-    }
-
-        .date-time-info span {
-            color: white;
-            font-weight: bold;
-            font-size: 13px;
-        }
-
-    .approval-status {
-        background: #00bf63;
-        color: white;
-        padding: 5px 10px;
-        border-radius: 12px;
-        font-size: 11px;
-        font-weight: bold;
-        font-style: italic;
-    }
-
-    .reservation-details {
-        padding: 15px 20px;
-        background: white;
-        display: flex;
-        gap: 40px;
-    }
-
-    .detail-item {
-        font-size: 13px;
-    }
-
-    .detail-label {
-        font-weight: bold;
-        color: #970c10;
-    }
-
-    .detail-value {
-        color: #970c10;
-        font-style: italic;
-    }
-
-    .tab-content {
-        display: none;
-    }
-
-        .tab-content.active {
-            display: block;
-        }
-
-    @@media (max-width: 900px) {
-        .main-content
-
-    {
-        max-width: 98vw;
-        padding: 24px 4vw;
-    }
-
-    .reservation-details {
-        flex-direction: column;
-        gap: 10px;
-    }
-
-    }
-
-    @@media (max-width: 600px) {
-        .main-content
-
-    {
-        padding: 12px 2vw;
-        margin-top: 16px;
-        margin-bottom: 16px;
-    }
-
-    .reservation-container {
-        padding: 10px;
-    }
-
-    .tabs-container {
-        flex-direction: column;
-    }
-
-    }
-</style>

@@ -3,6 +3,7 @@ using AYOKONA.Models;
 
 namespace AYOKONA.Entities
 {
+   
     public class ApplicationDbContext : DbContext
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
@@ -12,8 +13,9 @@ namespace AYOKONA.Entities
 
         public DbSet<UserAccount> UserAccounts { get; set; }
         public DbSet<AdminAccount> AdminAccounts { get; set; }
-        public DbSet<AYOKONA.Models.AdminLoginViewModel> AdminLoginViewModel { get; set; } = default!;
-        public DbSet<AYOKONA.Models.StudentProfileViewModel> StudentProfileViewModel { get; set; } = default!;
-        public DbSet<AYOKONA.Models.AdminRegisterViewModel> AdminRegisterViewModel { get; set; } = default!;
+        public DbSet<Reservation> Reservations { get; set; }
+        public DbSet<Group> Groups { get; set; } // Add this if not already present
+        public DbSet<Period> Periods { get; set; } // Add this if not already present
+        public DbSet<Request> Requests { get; set; }
     }
 }
