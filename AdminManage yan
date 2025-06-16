@@ -1,0 +1,333 @@
+@{
+    ViewData["Title"] = "AdminManage";
+    Layout = "Admin_Layout";
+    var approved = ViewData["Approved"] as List<AYOKONA.Entities.Reservation>;
+    var pending = ViewData["Pending"] as List<AYOKONA.Entities.Reservation>;
+    var declined = ViewData["Declined"] as List<AYOKONA.Entities.Reservation>;
+}
+
+<div class="admin-manage-outer">
+    <div class="container">
+        <h2 class="requests-title">Requests</h2>
+        <div class="requests-card">
+            <div class="tabs-container">
+                <button class="tab" onclick="switchTab('approved')">Approved</button>
+                <button class="tab" onclick="switchTab('pending')">Pending</button>
+                <button class="tab active" onclick="switchTab('cancelled')">Cancelled/Declined</button>
+            </div>
+            <div class="requests-content">
+                <div id="approved-content" class="tab-content" style="display: none;">
+                    @if (approved != null && approved.Any())
+                    {
+                        foreach (var item in approved)
+                        {
+                            <div class="request-item">
+                                <div class="request-header">
+                                    <div class="request-info">
+                                        <span>Date: @item.ReservationDate.ToString("MMMM d, yyyy")</span>
+                                        <span>Time: @item.TimeSlot</span>
+                                    </div>
+                                    <div class="status-badge status-approved">APPROVED</div>
+                                </div>
+                                <div class="request-details">
+                                    <div class="detail-item">
+                                        <span class="detail-label">Category:</span>
+                                        <span class="detail-value">@item.Category</span>
+                                    </div>
+                                    <div class="detail-item">
+                                        <span class="detail-label">Course/Year/Section:</span>
+                                        <span class="detail-value">@item.Section</span>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="empty-state">No approved requests found.</div>
+                    }
+                </div>
+                <div id="pending-content" class="tab-content" style="display: none;">
+                    @if (pending != null && pending.Any())
+                    {
+                        foreach (var item in pending)
+                        {
+                            <div class="request-item">
+                                <div class="request-header">
+                                    <div class="request-info">
+                                        <span>Date: @item.ReservationDate.ToString("MMMM d, yyyy")</span>
+                                        <span>Time: @item.TimeSlot</span>
+                                    </div>
+                                    <div class="status-badge status-pending">PENDING</div>
+                                </div>
+                                <div class="request-details">
+                                    <div class="detail-item">
+                                        <span class="detail-label">Category:</span>
+                                        <span class="detail-value">@item.Category</span>
+                                    </div>
+                                    <div class="detail-item">
+                                        <span class="detail-label">Course/Year/Section:</span>
+                                        <span class="detail-value">@item.Section</span>
+                                    </div>
+                                </div>
+                                <div style="margin-top:10px;">
+                                    <form method="post" asp-action="UpdateReservationStatus" asp-controller="Admin">
+                                        <input type="hidden" name="id" value="@item.Id" />
+                                        <button type="submit" name="status" value="Approved" class="btn btn-success btn-sm">Approve</button>
+                                        <button type="submit" name="status" value="Declined" class="btn btn-danger btn-sm">Decline</button>
+                                    </form>
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="empty-state">No pending requests found.</div>
+                    }
+                </div>
+                <div id="cancelled-content" class="tab-content">
+                    @if (declined != null && declined.Any())
+                    {
+                        foreach (var item in declined)
+                        {
+                            <div class="request-item">
+                                <div class="request-header">
+                                    <div class="request-info">
+                                        <span>Date: @item.ReservationDate.ToString("MMMM d, yyyy")</span>
+                                        <span>Time: @item.TimeSlot</span>
+                                    </div>
+                                    <div class="status-badge @(item.Status == "Declined" ? "status-declined" : "status-cancelled")">
+                                        @item.Status.ToUpper()
+                                    </div>
+                                </div>
+                                <div class="request-details">
+                                    <div class="detail-item">
+                                        <span class="detail-label">Category:</span>
+                                        <span class="detail-value">@item.Category</span>
+                                    </div>
+                                    <div class="detail-item">
+                                        <span class="detail-label">Course/Year/Section:</span>
+                                        <span class="detail-value">@item.Section</span>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="empty-state">No cancelled/declined requests found.</div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @section Scripts {
+    <script>
+        function switchTab(tabName) {
+            // Hide all tab content
+            const tabContents = document.querySelectorAll('.tab-content');
+            tabContents.forEach(content => content.style.display = 'none');
+
+            // Remove active class from all tabs
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => tab.classList.remove('active'));
+
+            // Show selected tab content
+            document.getElementById(tabName + '-content').style.display = 'block';
+
+            // Add active class to clicked tab
+            event.target.classList.add('active');
+        }
+
+        // Add click event listeners to request items for interactivity
+        document.querySelectorAll('.request-item').forEach(item => {
+            item.addEventListener('click', function() {
+                this.style.transform = 'scale(0.98)';
+                setTimeout(() => {
+                    this.style.transform = 'scale(1)';
+                }, 150);
+            });
+        });
+    </script>
+    }
+
+    <style>
+        .admin-manage-outer {
+            min-height: calc(100vh - 120px); /* Adjust 120px to match your header+footer height */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 0;
+            background-image: url('/Images/AdminsBG.jpg');
+            background-repeat: no-repeat;
+            background-size: cover;
+            background-position: center;
+            box-sizing: border-box;
+        }
+
+        .container {
+            max-width: 800px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .requests-title {
+            color: #970c10;
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 30px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .requests-card {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+        .tabs-container {
+            display: flex;
+            border-bottom: 1px solid #eee;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 15px 20px;
+            text-align: center;
+            background: #f8f8f8;
+            color: #666;
+            cursor: pointer;
+            font-weight: bold;
+            border: none;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+            .tab:first-child {
+                border-top-left-radius: 15px;
+            }
+
+            .tab.active {
+                background-color: #970c10;
+                color: white;
+            }
+
+            .tab:not(.active):hover {
+                background-color: #eee;
+            }
+
+        .requests-content {
+            padding: 25px;
+            min-height: 300px;
+        }
+
+        .request-item {
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+            .request-item:hover {
+                border-color: #970c10;
+                box-shadow: 0 4px 12px rgba(151, 12, 16, 0.1);
+            }
+
+        .request-header {
+            background-color: #970c10;
+            color: white;
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .request-info {
+            display: flex;
+            gap: 30px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .status-badge {
+            padding: 6px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            color: white;
+        }
+
+        .status-declined {
+            background-color: #970c10;
+        }
+
+        .status-cancelled {
+            background-color: #666;
+        }
+
+        .request-details {
+            padding: 15px 20px;
+            background: #f9f9f9;
+            display: flex;
+            gap: 40px;
+            font-size: 13px;
+        }
+
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .detail-label {
+            font-weight: bold;
+            color: #970c10;
+            font-style: italic;
+            margin-bottom: 3px;
+        }
+
+        .detail-value {
+            color: #333;
+        }
+
+        @@media (max-width: 900px) {
+            .container {
+                max-width: 98vw;
+                padding: 0 2vw;
+            }
+
+            .requests-content {
+                padding: 16px;
+            }
+
+            .request-details {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+
+        @@media (max-width: 600px) {
+            .admin-manage-outer {
+                padding: 10px 0;
+            }
+
+            .container {
+                padding: 0 1vw;
+            }
+
+            .requests-title {
+                font-size: 22px;
+            }
+
+            .requests-content {
+                padding: 8px;
+            }
+        }
+    </style>
+</div>
+
