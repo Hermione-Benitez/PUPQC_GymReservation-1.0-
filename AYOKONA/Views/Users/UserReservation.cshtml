@@ -297,7 +297,7 @@
             <div class="tabs-container">
                 <button class="tab active" onclick="switchTab(event, 'approved')">Approved</button>
                 <button class="tab" onclick="switchTab(event, 'pending')">Pending</button>
-                <button class="tab" onclick="switchTab(event, 'cancelled')">Cancelled/Declined</button>
+                <button class="tab" onclick="switchTab(event, 'cancelled')">Cancelled/Denied</button>
             </div>
 
             <div class="reservations-content">
@@ -388,7 +388,7 @@
                 } else if (reservation.Status === 'ongoing') {
                     statusClass = 'status-pending';
                     targetContainer = pendingContainer;
-                } else if (reservation.Status === 'cancelled' || reservation.Status === 'rejected' || reservation.Status === 'declined') {
+                } else if (reservation.Status === 'cancelled' || reservation.Status === 'rejected' || reservation.Status === 'Denied') {
                     statusClass = 'status-cancelled';
                     targetContainer = cancelledContainer;
                 } else if (reservation.Status === 'approved') {

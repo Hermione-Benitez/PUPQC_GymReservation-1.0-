@@ -114,11 +114,11 @@ namespace AYOKONA.Controllers
 
             var approved = requests.Where(r => r.Status.ToLower() == "approved").ToList();
             var pending = requests.Where(r => r.Status.ToLower() == "pending").ToList();
-            var declined = requests.Where(r => r.Status.ToLower() == "declined" || r.Status.ToLower() == "denied" || r.Status.ToLower() == "cancelled").ToList();
+            var Denied = requests.Where(r => r.Status.ToLower() == "Denied" || r.Status.ToLower() == "denied" || r.Status.ToLower() == "cancelled").ToList();
 
             ViewData["Approved"] = approved;
             ViewData["Pending"] = pending;
-            ViewData["Declined"] = declined;
+            ViewData["Denied"] = Denied;
 
             return View();
         }
@@ -135,10 +135,24 @@ namespace AYOKONA.Controllers
                 {
                     request.Status = "Approved";
                     newReservationStatus = "ongoing";
+
+                    // 💥 Auto-cancel other requests with the same date and period
+                    var conflictingRequests = await _context.Requests
+                        .Where(r =>
+                            r.RequestId != request.RequestId &&
+                            r.Date == request.Date &&
+                            r.PeriodId == request.PeriodId &&
+                            r.Status.ToLower() == "pending")
+                        .ToListAsync();
+
+                    foreach (var other in conflictingRequests)
+                    {
+                        other.Status = "Denied";
+                    }
                 }
-                else if (status == "Declined")
+                else if (status == "Denied")
                 {
-                    request.Status = "Declined";
+                    request.Status = "Denied";
                     newReservationStatus = "cancelled";
                 }
                 else
@@ -148,12 +162,12 @@ namespace AYOKONA.Controllers
 
                 _context.Requests.Update(request);
 
-                // Update the corresponding Reservation status if needed
+                // Update corresponding Reservation if applicable
                 if (newReservationStatus != null)
                 {
                     var reservation = await _context.Reservations
                         .FirstOrDefaultAsync(r => r.ReservationId == request.ReservationId);
-                    
+
                     if (reservation != null)
                     {
                         reservation.Status = newReservationStatus;
@@ -164,8 +178,10 @@ namespace AYOKONA.Controllers
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(AdminDashboard));
             }
+
             return RedirectToAction("AdminManage");
         }
+
 
         [Authorize]
         [Authorize]

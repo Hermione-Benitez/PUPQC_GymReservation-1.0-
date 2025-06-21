@@ -301,7 +301,7 @@
                 <div class="tabs-container">
                     <button class="tab active" onclick="switchTab(event, 'approved')">Approved</button>
                     <button class="tab" onclick="switchTab(event, 'pending')">Pending</button>
-                    <button class="tab" onclick="switchTab(event, 'cancelled')">Cancelled/Declined</button>
+                    <button class="tab" onclick="switchTab(event, 'cancelled')">Cancelled/Denied</button>
                 </div>
 
                 <div class="reservations-content">
@@ -391,7 +391,7 @@
                                             </form>
                                             <form method="post" action="@Url.Action("UpdateRequestStatus", "Admin")" style="display: inline;">
                                                 <input type="hidden" name="id" value="@request.RequestId" />
-                                                <input type="hidden" name="status" value="Declined" />
+                                                <input type="hidden" name="status" value="Denied" />
                                                 <button type="submit" class="discard-button decline-button">Decline</button>
                                             </form>
                                         </div>
@@ -406,9 +406,9 @@
                     </div>
 
                     <div id="cancelled-content" class="tab-content">
-                        @if (ViewData["Declined"] != null && ((List<Request>)ViewData["Declined"]).Any())
+                        @if (ViewData["Denied"] != null && ((List<Request>)ViewData["Denied"]).Any())
                         {
-                            foreach (var request in (List<Request>)ViewData["Declined"])
+                            foreach (var request in (List<Request>)ViewData["Denied"])
                             {
                                 <div class="reservation-item">
                                     <div class="reservation-header">
@@ -445,7 +445,7 @@
                         }
                         else
                         {
-                            <div class="empty-state">No cancelled/declined requests found.</div>
+                            <div class="empty-state">No cancelled/Denied requests found.</div>
                         }
                     </div>
                 </div>
