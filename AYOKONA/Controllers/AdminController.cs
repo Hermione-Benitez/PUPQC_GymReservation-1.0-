@@ -126,43 +126,55 @@ namespace AYOKONA.Controllers
         [HttpPost]
         public async Task<IActionResult> UpdateRequestStatus(int id, string status)
         {
-            var request = await _context.Requests.FirstOrDefaultAsync(r => r.RequestId == id);
+            var request = await _context.Requests
+                .Include(r => r.Reservation)
+                .FirstOrDefaultAsync(r => r.RequestId == id);
+
             if (request != null)
             {
-                string newReservationStatus = null;
-
                 if (status == "Approved")
                 {
                     request.Status = "Approved";
-                    newReservationStatus = "ongoing";
+                    if (request.Reservation != null)
+                    {
+                        request.Reservation.Status = "completed";
+                    }
+
+                    // Auto-cancel other requests with the same date and period
+                    var conflictingRequests = await _context.Requests
+                        .Include(r => r.Reservation)
+                        .Where(r =>
+                            r.RequestId != request.RequestId &&
+                            r.Date == request.Date &&
+                            r.PeriodId == request.PeriodId &&
+                            r.Status.ToLower() == "pending")
+                        .ToListAsync();
+
+                    foreach (var other in conflictingRequests)
+                    {
+                        other.Status = "Denied";
+                        if (other.Reservation != null)
+                        {
+                            other.Reservation.Status = "denied";
+                        }
+                    }
                 }
                 else if (status == "Declined")
                 {
                     request.Status = "Declined";
-                    newReservationStatus = "cancelled";
+                    if (request.Reservation != null)
+                    {
+                        request.Reservation.Status = "denied";
+                    }
                 }
                 else
                 {
                     request.Status = status;
                 }
 
-                _context.Requests.Update(request);
-
-                // Update the corresponding Reservation status if needed
-                if (newReservationStatus != null)
-                {
-                    var reservation = await _context.Reservations
-                        .FirstOrDefaultAsync(r => r.ReservationId == request.ReservationId);
-                    
-                    if (reservation != null)
-                    {
-                        reservation.Status = newReservationStatus;
-                        _context.Reservations.Update(reservation);
-                    }
-                }
-
                 await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(AdminDashboard));
+                TempData["SuccessMessage"] = $"Request has been {status}.";
+                return RedirectToAction(nameof(AdminManage));
             }
             return RedirectToAction("AdminManage");
         }
