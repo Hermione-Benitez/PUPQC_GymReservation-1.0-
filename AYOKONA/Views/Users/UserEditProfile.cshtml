@@ -267,157 +267,62 @@
 </head>
 <body>
     <div class="container">
-
         <div class="profile-section">
             <div class="profile-header">
                 <div class="profile-avatar">
                     @(!string.IsNullOrWhiteSpace(Model.Name) ? Model.Name.Split(' ').Select(n => n[0]).Aggregate("", (a, b) => a + b).ToUpper().Substring(0, Math.Min(2, Model.Name.Length)) : "U")
                 </div>
                 <div class="profile-info">
-                    <h2 id="displayName">@Model.Name</h2>
+                    <h2>@Model.Name</h2>
                     <p>@Model.StudentNumber</p>
                 </div>
             </div>
 
-            if (TempData["SuccessMessage"] != null)
+            @if (TempData["SuccessMessage"] != null)
             {
-            <div class="success-message" id="successMessage" style="display:block;">
-                @TempData["SuccessMessage"]
-            </div>
+                <div class="success-message" style="display:block;">@TempData["SuccessMessage"]</div>
+            }
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
             }
 
-            <form asp-action="UserEditProfile" method="post">
+            <form asp-action="UserEditProfile" asp-controller="Users" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="Id" />
                 <div class="form-section">
                     <div class="form-grid">
                         <div class="form-group">
-                            <label for="fullName">Full Name</label>
-                            <input type="text" id="fullName" name="fullName" value="Rey Lauron" required>
+                            <label asp-for="Name"></label>
+                            <input asp-for="Name" class="form-control" required />
+                            <span asp-validation-for="Name" class="text-danger"></span>
                         </div>
-
                         <div class="form-group">
-                            <label for="phoneNumber">Phone Number</label>
-                            <input type="tel" id="phoneNumber" name="phoneNumber" value="+63 912 345 6789">
+                            <label asp-for="Section"></label>
+                            <input asp-for="Section" class="form-control" />
+                            <span asp-validation-for="Section" class="text-danger"></span>
                         </div>
-
                         <div class="form-group">
-                            <label for="position">Position</label>
-                            <select id="position" name="position" required>
-                                <option value="Gym Administrator" selected>Gym Administrator</option>
-                                <option value="Assistant Manager">Assistant Manager</option>
-                                <option value="Fitness Instructor">Fitness Instructor</option>
-                                <option value="Maintenance Staff">Maintenance Staff</option>
-                                <option value="Receptionist">Receptionist</option>
-                                <option value="Trainer">Trainer</option>
-                            </select>
+                            <label asp-for="StudentNumber"></label>
+                            <input asp-for="StudentNumber" class="form-control" />
+                            <span asp-validation-for="StudentNumber" class="text-danger"></span>
                         </div>
-
                         <div class="form-group">
-                            <label for="Organization">Organization</label>
-                            <select id="Organization" name="Organization" required>
-                                <option value="'BYP'" selected>BYP</option>
-                                <option value="CBI">CBI</option>
-                                <option value="CHRS">CHRS</option>
-                                <option value="COL">COL</option>
-                                <option value="DOMT.Cs">DOMT.Cs</option>
-                                <option value="FBTO">FBTO</option>
-                                <option value="JMS">JMS</option>
-                                <option value="KATAGA">KATAGA</option>
-                                <option value="MUSA">MUSA</option>
-                                <option value="RCY">RCY</option>
-                                <option value="SPAS">SPAS</option>
-                                <option value="SRG">SRG</option>
-                                <option value="SSC">SSC</option>
-                                <option value="COMMITS">COMMITS</option>
-                                <option value="VOX NOVA">VOX NOVA</option>
-                                <option value="YES">YES</option>
-                            </select>
-                        </div>
-
-                    </div>
-                </div>
-
-                <div class="form-section">
-                    <div class="readonly-info">
-                        <h3>Read-Only Information</h3>
-                        <div class="readonly-grid">
-                            <div class="readonly-item">
-                                <label>Student ID</label>
-                                <span>EMP-2023-0045</span>
-                            </div>
-                            <div class="readonly-item">
-                                <label>Email</label>
-                                <span>reylauron@pup.edu.ph</span>
-                            </div>
-                            <div class="readonly-item">
-                                <label>Date Joined</label>
-                                <span>January 15, 2021</span>
-                            </div>
-                            <div class="readonly-item">
-                                <label>Campus</label>
-                                <span>PUP Quezon City</span>
-                            </div>
+                            <label asp-for="Email"></label>
+                            <input asp-for="Email" class="form-control" />
+                            <span asp-validation-for="Email" class="text-danger"></span>
                         </div>
                     </div>
                 </div>
-
                 <div class="form-actions">
-                    <button type="button" class="btn btn-secondary" onclick="cancelEdit()">Cancel</button>
+                    <a asp-action="UsersProfile" class="btn btn-secondary">Cancel</a>
                     <button type="submit" class="btn btn-primary">Save Changes</button>
                 </div>
             </form>
         </div>
     </div>
-
-
-    <script>
-        document.getElementById('editProfileForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-
-            // Get form values
-            const fullName = document.getElementById('fullName').value;
-            const phoneNumber = document.getElementById('phoneNumber').value;
-            const position = document.getElementById('position').value;
-            const department = document.getElementById('department').value;
-            const address = document.getElementById('address').value;
-
-            // Simulate form submission
-            setTimeout(() => {
-                // Update display name
-                document.getElementById('displayName').textContent = fullName;
-
-                // Show success message
-                const successMessage = document.getElementById('successMessage');
-                successMessage.style.display = 'block';
-
-                // Hide success message after 3 seconds
-                setTimeout(() => {
-                    successMessage.style.display = 'none';
-                }, 3000);
-
-                console.log('Profile updated:', {
-                    fullName,
-                    phoneNumber,
-                    position,
-                    department,
-                    address
-                });
-            }, 500);
-        });
-
-        function cancelEdit() {
-
-            // Optionally redirect back to profile view
-            console.log('Edit cancelled');
-        }
-
-        // Update avatar initials when name changes
-        document.getElementById('fullName').addEventListener('input', function() {
-            const name = this.value.trim();
-            if (name) {
-                const initials = name.split(' ').map(word => word.charAt(0).toUpperCase()).join('');
-                document.querySelector('.profile-avatar').textContent = initials.substring(0, 2);
-            }
-        });
-    </script>
+    @section Scripts {
+        @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
+    }
 </body>
 </html>

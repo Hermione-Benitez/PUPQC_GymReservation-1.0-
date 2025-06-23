@@ -2,15 +2,16 @@
 using AYOKONA.Models;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
-using System.Threading.Tasks;
-using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using System.Security.Claims;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.Diagnostics;
+using System.Threading.Tasks;
 
 namespace AYOKONA.Controllers
 {
@@ -648,9 +649,10 @@ namespace AYOKONA.Controllers
         public IActionResult UsersProfile()
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (userId == null)
+            if (string.IsNullOrEmpty(userId))
+            {
                 return RedirectToAction("StudentLogin");
-
+            }
             int id = int.Parse(userId);
             var user = _context.UserAccounts.FirstOrDefault(u => u.Id == id);
             if (user == null) return NotFound();
@@ -668,16 +670,87 @@ namespace AYOKONA.Controllers
             return View(model);
         }
 
-        public IActionResult UserEditProfile()
+        [Authorize]
+        public async Task<IActionResult> UserEditProfile()
         {
-            // Example: get the current user from the database
-            var email = User.FindFirstValue(ClaimTypes.Email) ?? User.Identity?.Name;
-            var user = _context.UserAccounts.FirstOrDefault(u => u.Email == email);
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+            {
+                TempData["ErrorMessage"] = "You must be logged in.";
+                return RedirectToAction("StudentLogin");
+            }
+            int id = int.Parse(userId);
+            var user = await _context.UserAccounts.FindAsync(id);
             if (user == null)
             {
-                return NotFound();
+                TempData["ErrorMessage"] = "User profile not found.";
+                return RedirectToAction("UsersProfile");
             }
-            return View(user);
+            var model = new AYOKONA.Models.UserEditProfileView
+            {
+                Id = user.Id,
+                Name = user.Name,
+                Email = user.Email,
+                Section = user.Section,
+                StudentNumber = user.StudentNumber,
+            };
+            return View(model);
+        }
+
+        [Authorize]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UserEditProfile(UserEditProfileView model)
+        {
+            Console.WriteLine($"Model.Id: {model.Id}, Name: {model.Name}, Email: {model.Email}");
+            var existingUser = await _context.UserAccounts.FindAsync(model.Id);
+            if (existingUser == null)
+            {
+                Console.WriteLine("User not found in DB.");
+            }
+            else
+            {
+                Console.WriteLine($"Before: {existingUser.Name}, {existingUser.Email}");
+                existingUser.Name = model.Name;
+                existingUser.Email = model.Email;
+                existingUser.Section = model.Section;
+                existingUser.StudentNumber = model.StudentNumber;
+                var result = await _context.SaveChangesAsync();
+                Console.WriteLine($"SaveChangesAsync result: {result}");
+                Console.WriteLine($"After: {existingUser.Name}, {existingUser.Email}");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+            bool emailChanged = existingUser.Email != model.Email;
+            existingUser.Name = model.Name;
+            existingUser.Email = model.Email;
+            existingUser.Section = model.Section;
+            existingUser.StudentNumber = model.StudentNumber;
+            await _context.SaveChangesAsync();
+            TempData["SuccessMessage"] = "Profile updated successfully.";
+
+            // If email changed, update authentication cookie
+            if (emailChanged)
+            {
+                await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                var claims = new List<Claim>
+                {
+                    new Claim(ClaimTypes.NameIdentifier, existingUser.Id.ToString()),
+                    new Claim(ClaimTypes.Name, existingUser.Name),
+                    new Claim(ClaimTypes.Email, existingUser.Email),
+                    new Claim("Section", existingUser.Section),
+                    new Claim(ClaimTypes.Role, "Student")
+                };
+                var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+                await HttpContext.SignInAsync(
+                    CookieAuthenticationDefaults.AuthenticationScheme,
+                    new ClaimsPrincipal(claimsIdentity)
+                );
+            }
+            return RedirectToAction("UsersProfile");
         }
 
         private async Task<UserAccount?> GetCurrentUserAccountAsync()
