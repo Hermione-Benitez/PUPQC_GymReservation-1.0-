@@ -265,6 +265,9 @@
                 })
             );
 
+            // Create a Set for quick lookup of whole day blocked dates
+            const wholeDaySet = new Set(wholeDayBlockedDates);
+
             // Create headers
             calendarGrid.style.gridTemplateColumns = `100px repeat(${periods.length}, 1fr)`;
 
@@ -310,7 +313,12 @@
                     const dateString = currentDate.toISOString().split('T')[0];
                     const slotIdentifier = `${dateString}_${period.PeriodId}`;
 
-                    if (approvedSlotsSet.has(slotIdentifier)) {
+                    // Check if this date is a whole day blocked date
+                    const localDateString = currentDate.toLocaleDateString();
+                    if (wholeDaySet.has(localDateString)) {
+                        cell.classList.add('reserved');
+                        cell.textContent = 'Reserved';
+                    } else if (approvedSlotsSet.has(slotIdentifier)) {
                         cell.classList.add('reserved');
                         cell.textContent = 'Reserved';
                     }
