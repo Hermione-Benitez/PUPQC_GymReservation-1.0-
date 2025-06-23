@@ -2,15 +2,16 @@
 using AYOKONA.Models;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
-using System.Threading.Tasks;
-using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using System.Security.Claims;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.Diagnostics;
+using System.Threading.Tasks;
 
 namespace AYOKONA.Controllers
 {
@@ -135,46 +136,6 @@ namespace AYOKONA.Controllers
             }
         }
 
-        [HttpGet]
-        public IActionResult StudentLogin() => View();
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> StudentLogin(StudentLoginViewModel model)
-        {
-            if (!ModelState.IsValid)
-                return View(model);
-
-            var hashedPassword = model.GetHashedPassword();
-
-            var user = _context.UserAccounts
-                .FirstOrDefault(u => u.StudentNumber == model.StudentNumber && u.PasswordHash == hashedPassword);
-
-            if (user != null)
-            {
-                var claims = new List<Claim>
-                {
-                    new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                    new Claim(ClaimTypes.Name, user.Name),
-                    new Claim("Section", user.Section),
-                    new Claim(ClaimTypes.Role, "Student")
-                };
-
-                var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-                var authProperties = new AuthenticationProperties { IsPersistent = true };
-
-                await HttpContext.SignInAsync(
-                    CookieAuthenticationDefaults.AuthenticationScheme,
-                    new ClaimsPrincipal(claimsIdentity),
-                    authProperties);
-
-                TempData["SuccessMessage"] = "Login successful!";
-                return RedirectToAction("Homepage");
-            }
-
-            ModelState.AddModelError(string.Empty, "Invalid student number or password.");
-            return View(model);
-        }
 
         [HttpGet]
         public IActionResult Homepage() => View();
@@ -234,7 +195,7 @@ namespace AYOKONA.Controllers
             ViewData["Periods"] = JsonSerializer.Serialize(periods, options);
 
             // Fetch approved reservations for the current month and year
-            var approvedCalendarSlots = await _context.Reservations
+            var approvedCalendarSlots = await _context.Requests
                 .Where(r => r.Status == "approved" && r.Date.Month == targetDate.Month && r.Date.Year == targetDate.Year)
                 .Select(r => new { r.Date, r.PeriodId })
                 .ToListAsync();
@@ -254,7 +215,7 @@ namespace AYOKONA.Controllers
                 .Where(r => r.Date.Month == targetDate.Month && r.Date.Year == targetDate.Year && r.PeriodId == 6)
                 .Select(r => new { r.Date })
                 .ToListAsync();
-            
+
             var wholeDayRequests = await _context.Requests
                 .Where(r => r.Date.Month == targetDate.Month && r.Date.Year == targetDate.Year && r.PeriodId == 6 && r.Status == "approved")
                 .Select(r => new { r.Date })
@@ -446,16 +407,16 @@ namespace AYOKONA.Controllers
             Debug.WriteLine($"Server-side validation check started for GroupId: {group.GroupId}, PeriodId: {model.PeriodId}, Date: {model.ReservationDate:yyyy-MM-dd}");
 
             var existingOngoingReservation = await _context.Reservations
-                .AnyAsync(r => r.GroupId == group.GroupId && 
-                               r.PeriodId == model.PeriodId && 
-                               r.Date == model.ReservationDate && 
+                .AnyAsync(r => r.GroupId == group.GroupId &&
+                               r.PeriodId == model.PeriodId &&
+                               r.Date == model.ReservationDate &&
                                r.Status == "ongoing");
             Debug.WriteLine($"Existing Ongoing Reservation found: {existingOngoingReservation}");
 
             var existingPendingRequest = await _context.Requests
-                .AnyAsync(req => req.GroupId == group.GroupId && 
-                                 req.PeriodId == model.PeriodId && 
-                                 req.Date == model.ReservationDate && 
+                .AnyAsync(req => req.GroupId == group.GroupId &&
+                                 req.PeriodId == model.PeriodId &&
+                                 req.Date == model.ReservationDate &&
                                  req.Status == "pending");
             Debug.WriteLine($"Existing Pending Request found: {existingPendingRequest}");
 
@@ -648,9 +609,10 @@ namespace AYOKONA.Controllers
         public IActionResult UsersProfile()
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (userId == null)
+            if (string.IsNullOrEmpty(userId))
+            {
                 return RedirectToAction("StudentLogin");
-
+            }
             int id = int.Parse(userId);
             var user = _context.UserAccounts.FirstOrDefault(u => u.Id == id);
             if (user == null) return NotFound();
@@ -666,6 +628,105 @@ namespace AYOKONA.Controllers
             };
 
             return View(model);
+        }
+
+        [Authorize]
+        public async Task<IActionResult> UserEditProfile()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+            {
+                TempData["ErrorMessage"] = "You must be logged in.";
+                return RedirectToAction("StudentLogin");
+            }
+            int id = int.Parse(userId);
+            var user = await _context.UserAccounts.FindAsync(id);
+            if (user == null)
+            {
+                TempData["ErrorMessage"] = "User profile not found.";
+                return RedirectToAction("UsersProfile");
+            }
+            var model = new AYOKONA.Models.UserEditProfileView
+            {
+                Id = user.Id,
+                Name = user.Name,
+                Email = user.Email,
+                Section = user.Section,
+                StudentNumber = user.StudentNumber,
+            };
+            return View(model);
+        }
+
+        [Authorize]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UserEditProfile(UserEditProfileView model)
+        {
+            Console.WriteLine($"Model.Id: {model.Id}, Name: {model.Name}, Email: {model.Email}");
+            var existingUser = await _context.UserAccounts.FindAsync(model.Id);
+            if (existingUser == null)
+            {
+                Console.WriteLine("User not found in DB.");
+            }
+            else
+            {
+                Console.WriteLine($"Before: {existingUser.Name}, {existingUser.Email}");
+                existingUser.Name = model.Name;
+                existingUser.Email = model.Email;
+                existingUser.Section = model.Section;
+                existingUser.StudentNumber = model.StudentNumber;
+                var result = await _context.SaveChangesAsync();
+                Console.WriteLine($"SaveChangesAsync result: {result}");
+                Console.WriteLine($"After: {existingUser.Name}, {existingUser.Email}");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+            bool emailChanged = existingUser.Email != model.Email;
+            existingUser.Name = model.Name;
+            existingUser.Email = model.Email;
+            existingUser.Section = model.Section;
+            existingUser.StudentNumber = model.StudentNumber;
+            await _context.SaveChangesAsync();
+            TempData["SuccessMessage"] = "Profile updated successfully.";
+
+            // If email changed, update authentication cookie
+            if (emailChanged)
+            {
+                await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                var claims = new List<Claim>
+                {
+                    new Claim(ClaimTypes.NameIdentifier, existingUser.Id.ToString()),
+                    new Claim(ClaimTypes.Name, existingUser.Name),
+                    new Claim(ClaimTypes.Email, existingUser.Email),
+                    new Claim("Section", existingUser.Section),
+                    new Claim(ClaimTypes.Role, "Student")
+                };
+                var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+                await HttpContext.SignInAsync(
+                    CookieAuthenticationDefaults.AuthenticationScheme,
+                    new ClaimsPrincipal(claimsIdentity)
+                );
+            }
+
+            // Call this after updating the user section, if it changed
+            await UpdateSectionGroupNameAsync(model.Section, model.Section);
+
+            return RedirectToAction("UsersProfile");
+        }
+
+        // Call this after updating the user section, if it changed
+        private async Task UpdateSectionGroupNameAsync(string oldSection, string newSection)
+        {
+            if (string.IsNullOrWhiteSpace(oldSection) || string.IsNullOrWhiteSpace(newSection)) return;
+            var group = await _context.Groups.FirstOrDefaultAsync(g => g.Name == oldSection && g.Category == "section");
+            if (group != null)
+            {
+                group.Name = newSection;
+                await _context.SaveChangesAsync();
+            }
         }
 
         private async Task<UserAccount?> GetCurrentUserAccountAsync()

@@ -388,7 +388,7 @@
                 } else if (reservation.Status === 'ongoing') {
                     statusClass = 'status-pending';
                     targetContainer = pendingContainer;
-                } else if (reservation.Status === 'cancelled' || reservation.Status === 'rejected' || reservation.Status === 'declined') {
+                } else if (reservation.Status === 'cancelled' || reservation.Status === 'declined' || reservation.Status === 'denied') {
                     statusClass = 'status-cancelled';
                     targetContainer = cancelledContainer;
                 } else if (reservation.Status === 'approved') {

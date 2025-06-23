@@ -69,7 +69,7 @@ namespace AYOKONA.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> AdminDashboard()
+        public async Task<IActionResult> AdminDashboard(int? month, int? year)
         {
             var requests = await _context.Requests
                 .Include(r => r.User) // Corrected: Include User to get user details
@@ -101,6 +101,29 @@ namespace AYOKONA.Controllers
             };
             ViewData["ReservationRequests"] = System.Text.Json.JsonSerializer.Serialize(requests, options);
 
+            // Calendar Data
+            DateTime targetDate = DateTime.Today;
+            if (month.HasValue && year.HasValue)
+            {
+                targetDate = new DateTime(year.Value, month.Value, 1);
+            }
+
+            ViewData["CurrentMonth"] = targetDate.Month;
+            ViewData["CurrentYear"] = targetDate.Year;
+
+            var periods = await _context.Periods
+                .Where(p => p.PeriodId != 6) // Exclude PeriodId 6 (Whole Day)
+                .OrderBy(p => p.StartTime)
+                .Select(p => new { p.PeriodId, StartTime = p.StartTime.ToString(), EndTime = p.EndTime.ToString() })
+                .ToListAsync();
+            ViewData["Periods"] = System.Text.Json.JsonSerializer.Serialize(periods, options);
+
+            var approvedCalendarSlots = await _context.Requests
+                .Where(r => r.Status == "approved" && r.Date.Month == targetDate.Month && r.Date.Year == targetDate.Year)
+                .Select(r => new { r.Date, r.PeriodId })
+                .ToListAsync();
+            ViewData["ApprovedCalendarSlots"] = System.Text.Json.JsonSerializer.Serialize(approvedCalendarSlots, options);
+
             return View("AdminDashboard");
         }
 
@@ -126,43 +149,55 @@ namespace AYOKONA.Controllers
         [HttpPost]
         public async Task<IActionResult> UpdateRequestStatus(int id, string status)
         {
-            var request = await _context.Requests.FirstOrDefaultAsync(r => r.RequestId == id);
+            var request = await _context.Requests
+                .Include(r => r.Reservation)
+                .FirstOrDefaultAsync(r => r.RequestId == id);
+
             if (request != null)
             {
-                string newReservationStatus = null;
-
                 if (status == "Approved")
                 {
                     request.Status = "Approved";
-                    newReservationStatus = "ongoing";
+                    if (request.Reservation != null)
+                    {
+                        request.Reservation.Status = "completed";
+                    }
+
+                    // Auto-cancel other requests with the same date and period
+                    var conflictingRequests = await _context.Requests
+                        .Include(r => r.Reservation)
+                        .Where(r =>
+                            r.RequestId != request.RequestId &&
+                            r.Date == request.Date &&
+                            r.PeriodId == request.PeriodId &&
+                            r.Status.ToLower() == "pending")
+                        .ToListAsync();
+
+                    foreach (var other in conflictingRequests)
+                    {
+                        other.Status = "Denied";
+                        if (other.Reservation != null)
+                        {
+                            other.Reservation.Status = "denied";
+                        }
+                    }
                 }
                 else if (status == "Declined")
                 {
                     request.Status = "Declined";
-                    newReservationStatus = "cancelled";
+                    if (request.Reservation != null)
+                    {
+                        request.Reservation.Status = "denied";
+                    }
                 }
                 else
                 {
                     request.Status = status;
                 }
 
-                _context.Requests.Update(request);
-
-                // Update the corresponding Reservation status if needed
-                if (newReservationStatus != null)
-                {
-                    var reservation = await _context.Reservations
-                        .FirstOrDefaultAsync(r => r.ReservationId == request.ReservationId);
-                    
-                    if (reservation != null)
-                    {
-                        reservation.Status = newReservationStatus;
-                        _context.Reservations.Update(reservation);
-                    }
-                }
-
                 await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(AdminDashboard));
+                TempData["SuccessMessage"] = $"Request has been {status}.";
+                return RedirectToAction(nameof(AdminManage));
             }
             return RedirectToAction("AdminManage");
         }
@@ -188,12 +223,12 @@ namespace AYOKONA.Controllers
             var model = new AdminProfileViewModel
             {
                 FullName = admin.Name,
-                Department = "Physical Education",
-                Position = "Gym Administrator",
+                Department = admin.Department,
+                Position = admin.Position,
                 Email = admin.Email,
                 Campus = "PUP Quezon City",
                 Role = "Student"
-                
+
             };
 
             return View(model); // Pass admin to the view
@@ -202,42 +237,60 @@ namespace AYOKONA.Controllers
         [Authorize]
         public IActionResult AdminEditProfile()
         {
-            var email = User.Identity?.Name;
+            var email = User.FindFirstValue(ClaimTypes.Email) ?? User.Identity?.Name;
             var admin = _context.AdminAccounts.FirstOrDefault(a => a.Email == email);
-
             if (admin == null)
             {
                 return NotFound("Admin profile not found.");
             }
-
-            return View(admin);
+            var model = new AYOKONA.Models.AdminEditProfileView
+            {
+                Id = admin.Id,
+                Name = admin.Name,
+                Email = admin.Email,
+                Department = admin.Department ?? "Physical Education",
+                Position = admin.Position ?? "Gym Administrator"
+            };
+            return View(model);
         }
 
         [Authorize]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult AdminEditProfile(AdminAccount updatedAdmin)
+        public async Task<IActionResult> AdminEditProfile(AdminEditProfileView model)
         {
             if (!ModelState.IsValid)
             {
-                return View(updatedAdmin);
+                return View(model);
             }
-
-            var email = User.Identity.Name;
-            var existingAdmin = _context.AdminAccounts.FirstOrDefault(a => a.Email == email);
-
+            var existingAdmin = _context.AdminAccounts.FirstOrDefault(a => a.Id == model.Id);
             if (existingAdmin == null)
             {
                 return NotFound("Admin profile not found.");
             }
-
-            // Update fields
-            existingAdmin.Name = updatedAdmin.Name;
-            existingAdmin.Email = updatedAdmin.Email;
-
+            bool emailChanged = existingAdmin.Email != model.Email;
+            existingAdmin.Name = model.Name;
+            existingAdmin.Email = model.Email;
+            existingAdmin.Department = model.Department;
+            existingAdmin.Position = model.Position;
             _context.SaveChanges();
-
             TempData["SuccessMessage"] = "Profile updated successfully.";
+
+            // If email changed, update authentication cookie
+            if (emailChanged)
+            {
+                await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                var claims = new List<Claim>
+                {
+                    new Claim(ClaimTypes.Name, existingAdmin.Name),
+                    new Claim(ClaimTypes.Email, existingAdmin.Email)
+                };
+                var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+                await HttpContext.SignInAsync(
+                    CookieAuthenticationDefaults.AuthenticationScheme,
+                    new ClaimsPrincipal(claimsIdentity)
+                );
+            }
             return RedirectToAction("AdminProfile");
         }
 

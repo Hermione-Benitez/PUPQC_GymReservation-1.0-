@@ -1,8 +1,10 @@
-﻿@model AYOKONA.Models.AdminEditProfileView
+﻿@model AYOKONA.Models.UserEditProfileView
+
 @{
-    ViewData["Title"] = "Edit Profile";
-    Layout = "Admin_Layout";
+    ViewData["Title"] = "UserEditProfile";
+    Layout = "Students_Layout";
 }
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -267,19 +269,25 @@
     <div class="container">
         <div class="profile-section">
             <div class="profile-header">
-                <div class="profile-avatar">@Model.Name?[0]</div>
+                <div class="profile-avatar">
+                    @(!string.IsNullOrWhiteSpace(Model.Name) ? Model.Name.Split(' ').Select(n => n[0]).Aggregate("", (a, b) => a + b).ToUpper().Substring(0, Math.Min(2, Model.Name.Length)) : "U")
+                </div>
                 <div class="profile-info">
                     <h2>@Model.Name</h2>
-                    <p>Admin</p>
+                    <p>@Model.StudentNumber</p>
                 </div>
             </div>
 
             @if (TempData["SuccessMessage"] != null)
             {
-                <div class="success-message">@TempData["SuccessMessage"]</div>
+                <div class="success-message" style="display:block;">@TempData["SuccessMessage"]</div>
+            }
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
             }
 
-            <form asp-action="AdminEditProfile" method="post">
+            <form asp-action="UserEditProfile" asp-controller="Users" method="post">
                 @Html.AntiForgeryToken()
                 <input type="hidden" asp-for="Id" />
                 <div class="form-section">
@@ -287,46 +295,34 @@
                         <div class="form-group">
                             <label asp-for="Name"></label>
                             <input asp-for="Name" class="form-control" required />
+                            <span asp-validation-for="Name" class="text-danger"></span>
+                        </div>
+                        <div class="form-group">
+                            <label asp-for="Section"></label>
+                            <input asp-for="Section" class="form-control" />
+                            <span asp-validation-for="Section" class="text-danger"></span>
+                        </div>
+                        <div class="form-group">
+                            <label asp-for="StudentNumber"></label>
+                            <input asp-for="StudentNumber" class="form-control" />
+                            <span asp-validation-for="StudentNumber" class="text-danger"></span>
                         </div>
                         <div class="form-group">
                             <label asp-for="Email"></label>
-                            <input asp-for="Email" class="form-control" required />
-                        </div>
-                        <div class="form-group">
-                            <label asp-for="Position"></label>
-                            <select asp-for="Position" class="form-control">
-                                <option>Gym Administrator</option>
-                                <option>Assistant Manager</option>
-                                <option>Fitness Instructor</option>
-                                <option>Maintenance Staff</option>
-                                <option>Receptionist</option>
-                                <option>Trainer</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label asp-for="Department"></label>
-                            <select asp-for="Department" class="form-control">
-                                <option>Physical Education</option>
-                                <option>Sports Science</option>
-                                <option>Recreation</option>
-                                <option>Health & Wellness</option>
-                                <option>Administration</option>
-                            </select>
+                            <input asp-for="Email" class="form-control" />
+                            <span asp-validation-for="Email" class="text-danger"></span>
                         </div>
                     </div>
                 </div>
                 <div class="form-actions">
-                    <a asp-action="AdminProfile" class="btn btn-secondary">Cancel</a>
+                    <a asp-action="UsersProfile" class="btn btn-secondary">Cancel</a>
                     <button type="submit" class="btn btn-primary">Save Changes</button>
                 </div>
             </form>
         </div>
     </div>
-
     @section Scripts {
-        @{
-            await Html.RenderPartialAsync("_ValidationScriptsPartial");
-        }
+        @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
     }
 </body>
 </html>

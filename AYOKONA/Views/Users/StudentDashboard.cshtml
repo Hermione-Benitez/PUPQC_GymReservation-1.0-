@@ -32,6 +32,12 @@
             color: #970c10;
         }
 
+        .reserved {
+            background-color: #dc3545 !important; /* Use a distinct red color */
+            color: white !important;
+            cursor: not-allowed;
+        }
+
         .reserved-slot {
             background-color: #970c10;
             color: white;
@@ -168,7 +174,7 @@
                 }
 
                 const reservationDate = new Date(reservation.Date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-                
+
                 // Format TimeSpan strings to readable time format (e.g., 9:00 AM - 10:00 AM)
                 const formatTime = (timeSpanString) => {
                     // timeSpanString is typically "HH:mm:ss.ms" or "HH:mm:ss"
@@ -248,23 +254,22 @@
             calendarGrid.innerHTML = ''; // Clear existing content
 
             const daysInMonth = getDaysInMonth(month, year);
+            const periods = allPeriods; // Use the global 'allPeriods'
 
-            document.getElementById('currentMonthYear').textContent = new Date(year, month).toLocaleString('en-US', { month: 'long', year: 'numeric' });
-            document.getElementById('currentMonthYear').style.color = '#970c10';
+            // Create a Set for quick lookups of approved slots
+            const approvedSlotsSet = new Set(
+                approvedCalendarSlots.map(slot => {
+                    // Treat the date string from C# as is, just taking the date part to avoid timezone issues.
+                    const date = slot.Date.split('T')[0];
+                    return `${date}_${slot.PeriodId}`;
+                })
+            );
 
-            // Update month navigation text and links
-            const prevMonthDate = new Date(year, month - 1);
-            document.getElementById('prevMonthText').textContent = prevMonthDate.toLocaleString('en-US', { month: 'long' });
-            document.getElementById('prevMonthText').style.color = '#ffb000';
-            document.getElementById('prevMonthBtn').onclick = () => navigateMonth(month - 1, year);
+            // Create a Set for quick lookup of whole day blocked dates
+            const wholeDaySet = new Set(wholeDayBlockedDates);
 
-            const nextMonthDate = new Date(year, month + 1);
-            document.getElementById('nextMonthText').textContent = nextMonthDate.toLocaleString('en-US', { month: 'long' });
-            document.getElementById('nextMonthText').style.color = '#ffb000';
-            document.getElementById('nextMonthBtn').onclick = () => navigateMonth(month + 1, year);
-
-            // Set grid columns dynamically based on periods + 1 for the 'Days' column
-            calendarGrid.style.gridTemplateColumns = `repeat(${allPeriods.length + 1}, 1fr)`;
+            // Create headers
+            calendarGrid.style.gridTemplateColumns = `100px repeat(${periods.length}, 1fr)`;
 
             // Create header row
             const daysHeaderCell = document.createElement('div');
@@ -272,66 +277,53 @@
             daysHeaderCell.textContent = 'Days';
             calendarGrid.appendChild(daysHeaderCell);
 
-            allPeriods.forEach(period => {
+            periods.forEach(period => {
                 const headerCell = document.createElement('div');
                 headerCell.className = 'calendar-header-cell';
                 headerCell.textContent = `${formatTime(period.StartTime)} - ${formatTime(period.EndTime)}`;
                 calendarGrid.appendChild(headerCell);
             });
 
-            // Populate calendar days
-            for (let day = 1; day <= daysInMonth; day++) {
-                const date = new Date(year, month, day);
-                // Ensure consistent date formatting for all comparisons
-                const formattedDateForComparison = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+            document.getElementById('currentMonthYear').textContent = new Date(year, month).toLocaleString('en-US', { month: 'long', year: 'numeric' });
+            document.getElementById('currentMonthYear').style.color = '#970c10';
 
-                // Day cell
+            // Update month navigation text and links
+            const prevMonthDate = new Date(year, month - 1, 1);
+            document.getElementById('prevMonthText').textContent = prevMonthDate.toLocaleString('en-US', { month: 'long' });
+            document.getElementById('prevMonthText').style.color = '#ffb000';
+            document.getElementById('prevMonthBtn').onclick = () => navigateMonth(month - 1, year);
+
+            const nextMonthDate = new Date(year, month + 1, 1);
+            document.getElementById('nextMonthText').textContent = nextMonthDate.toLocaleString('en-US', { month: 'long' });
+            document.getElementById('nextMonthText').style.color = '#ffb000';
+            document.getElementById('nextMonthBtn').onclick = () => navigateMonth(month + 1, year);
+
+            // Populate calendar days and slots
+            for (let i = 1; i <= daysInMonth; i++) {
                 const dayCell = document.createElement('div');
                 dayCell.className = 'calendar-cell';
-                dayCell.textContent = day;
+                dayCell.textContent = i;
                 calendarGrid.appendChild(dayCell);
 
-                allPeriods.forEach(period => {
-                    const slotCell = document.createElement('div');
-                    slotCell.className = 'calendar-cell';
+                // Create cells for each period
+                periods.forEach(period => {
+                    const cell = document.createElement('div');
+                    cell.className = 'calendar-cell';
+                    const currentDate = new Date(Date.UTC(year, month, i));
+                    const dateString = currentDate.toISOString().split('T')[0];
+                    const slotIdentifier = `${dateString}_${period.PeriodId}`;
 
-                    let isSlotReserved = false; // Combined flag for any reserved status
-
-                    // Check for Whole Day Blocked Dates (from Reservations/Requests PeriodId 6)
-                    if (wholeDayBlockedDates.some(blockedDateString => {
-                        const bd = new Date(blockedDateString);
-                        return bd.getFullYear() === date.getFullYear() && bd.getMonth() === date.getMonth() && bd.getDate() === date.getDate();
-                    })) {
-                        isSlotReserved = true;
+                    // Check if this date is a whole day blocked date
+                    const localDateString = currentDate.toLocaleDateString();
+                    if (wholeDaySet.has(localDateString)) {
+                        cell.classList.add('reserved');
+                        cell.textContent = 'Reserved';
+                    } else if (approvedSlotsSet.has(slotIdentifier)) {
+                        cell.classList.add('reserved');
+                        cell.textContent = 'Reserved';
                     }
 
-                    // Check for Fully Booked Slots (3+ reservations)
-                    if (!isSlotReserved) { // Only check if not already reserved by whole day
-                        for (const bookedSlot of fullyBookedSlots) {
-                            const bsDate = new Date(bookedSlot.date);
-                            if (bsDate.getFullYear() === date.getFullYear() && bsDate.getMonth() === date.getMonth() && bsDate.getDate() === date.getDate() && bookedSlot.periodId === period.PeriodId) {
-                                isSlotReserved = true;
-                                break;
-                            }
-                        }
-                    }
-
-                    // Check for Approved Calendar Slots (any approved reservation)
-                    if (!isSlotReserved) { // Only check if not already reserved by previous conditions
-                        for (const approvedSlot of approvedCalendarSlots) {
-                            const asDate = new Date(approvedSlot.date);
-                            if (asDate.getFullYear() === date.getFullYear() && asDate.getMonth() === date.getMonth() && asDate.getDate() === date.getDate() && approvedSlot.periodId === period.PeriodId) {
-                                isSlotReserved = true;
-                                break;
-                            }
-                        }
-                    }
-
-                    if (isSlotReserved) {
-                        slotCell.classList.add('reserved-slot');
-                    }
-                    
-                    calendarGrid.appendChild(slotCell);
+                    calendarGrid.appendChild(cell);
                 });
             }
         }

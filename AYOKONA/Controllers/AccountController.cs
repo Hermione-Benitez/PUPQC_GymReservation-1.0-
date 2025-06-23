@@ -42,7 +42,7 @@ namespace AYOKONA.Controllers
             var admin = new AdminAccount
             {
                 Name = model.Name, // You may want to add a Name field to your view/model for proper admin naming
-                Email = model.Email, 
+                Email = model.Email,
                 PasswordHash = model.GetHashedPassword() // Use the method to hash the password
             };
 
@@ -102,17 +102,20 @@ namespace AYOKONA.Controllers
             return View();
         }
 
+        [HttpGet]
+        public IActionResult StudentLogin()
+        {
+            return View("~/Views/Account/StudentLogin.cshtml");
+        }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Login(StudentLoginViewModel model)
+        public async Task<IActionResult> StudentLogin(StudentLoginViewModel model)
         {
             if (!ModelState.IsValid)
-            {
-                return View(model);
-            }
+                return View("~/Views/Account/StudentLogin.cshtml", model);
 
             var hashedPassword = model.GetHashedPassword();
-
             var user = _context.UserAccounts
                 .FirstOrDefault(u => u.StudentNumber == model.StudentNumber && u.PasswordHash == hashedPassword);
 
@@ -139,11 +142,9 @@ namespace AYOKONA.Controllers
                 TempData["SuccessMessage"] = "Login successful!";
                 return RedirectToAction("Homepage");
             }
-            else
-            {
-                ModelState.AddModelError(string.Empty, "Invalid student number or password.");
-                return View(model);
-            }
+
+            ModelState.AddModelError("", "Invalid student number or password.");
+            return View("~/Views/Account/StudentLogin.cshtml", model);
         }
 
         [Authorize]
