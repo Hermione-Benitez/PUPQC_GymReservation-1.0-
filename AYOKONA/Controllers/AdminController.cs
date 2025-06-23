@@ -223,8 +223,8 @@ namespace AYOKONA.Controllers
             var model = new AdminProfileViewModel
             {
                 FullName = admin.Name,
-                Department = "Physical Education",
-                Position = "Gym Administrator",
+                Department = admin.Department,
+                Position = admin.Position,
                 Email = admin.Email,
                 Campus = "PUP Quezon City",
                 Role = "Student"
@@ -243,35 +243,54 @@ namespace AYOKONA.Controllers
             {
                 return NotFound("Admin profile not found.");
             }
-            return View(admin);
+            var model = new AYOKONA.Models.AdminEditProfileView
+            {
+                Id = admin.Id,
+                Name = admin.Name,
+                Email = admin.Email,
+                Department = admin.Department ?? "Physical Education",
+                Position = admin.Position ?? "Gym Administrator"
+            };
+            return View(model);
         }
 
         [Authorize]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult AdminEditProfile(AdminAccount updatedAdmin)
+        public async Task<IActionResult> AdminEditProfile(AdminEditProfileView model)
         {
-            System.Diagnostics.Debug.WriteLine($"Posted Admin Id: {updatedAdmin.Id}");
-
             if (!ModelState.IsValid)
             {
-                return View(updatedAdmin);
+                return View(model);
             }
-
-            var existingAdmin = _context.AdminAccounts.FirstOrDefault(a => a.Id == updatedAdmin.Id);
+            var existingAdmin = _context.AdminAccounts.FirstOrDefault(a => a.Id == model.Id);
             if (existingAdmin == null)
             {
                 return NotFound("Admin profile not found.");
             }
-
-            existingAdmin.Name = updatedAdmin.Name;
-            existingAdmin.Email = updatedAdmin.Email;
-            existingAdmin.Department = updatedAdmin.Department;
-            existingAdmin.Position = updatedAdmin.Position;
-
+            bool emailChanged = existingAdmin.Email != model.Email;
+            existingAdmin.Name = model.Name;
+            existingAdmin.Email = model.Email;
+            existingAdmin.Department = model.Department;
+            existingAdmin.Position = model.Position;
             _context.SaveChanges();
-
             TempData["SuccessMessage"] = "Profile updated successfully.";
+
+            // If email changed, update authentication cookie
+            if (emailChanged)
+            {
+                await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                var claims = new List<Claim>
+                {
+                    new Claim(ClaimTypes.Name, existingAdmin.Name),
+                    new Claim(ClaimTypes.Email, existingAdmin.Email)
+                };
+                var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+                await HttpContext.SignInAsync(
+                    CookieAuthenticationDefaults.AuthenticationScheme,
+                    new ClaimsPrincipal(claimsIdentity)
+                );
+            }
             return RedirectToAction("AdminProfile");
         }
 
