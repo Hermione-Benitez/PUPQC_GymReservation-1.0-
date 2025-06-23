@@ -69,7 +69,7 @@ namespace AYOKONA.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> AdminDashboard()
+        public async Task<IActionResult> AdminDashboard(int? month, int? year)
         {
             var requests = await _context.Requests
                 .Include(r => r.User) // Corrected: Include User to get user details
@@ -100,6 +100,29 @@ namespace AYOKONA.Controllers
                 ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles
             };
             ViewData["ReservationRequests"] = System.Text.Json.JsonSerializer.Serialize(requests, options);
+
+            // Calendar Data
+            DateTime targetDate = DateTime.Today;
+            if (month.HasValue && year.HasValue)
+            {
+                targetDate = new DateTime(year.Value, month.Value, 1);
+            }
+
+            ViewData["CurrentMonth"] = targetDate.Month;
+            ViewData["CurrentYear"] = targetDate.Year;
+
+            var periods = await _context.Periods
+                .Where(p => p.PeriodId != 6) // Exclude PeriodId 6 (Whole Day)
+                .OrderBy(p => p.StartTime)
+                .Select(p => new { p.PeriodId, StartTime = p.StartTime.ToString(), EndTime = p.EndTime.ToString() })
+                .ToListAsync();
+            ViewData["Periods"] = System.Text.Json.JsonSerializer.Serialize(periods, options);
+
+            var approvedCalendarSlots = await _context.Requests
+                .Where(r => r.Status == "approved" && r.Date.Month == targetDate.Month && r.Date.Year == targetDate.Year)
+                .Select(r => new { r.Date, r.PeriodId })
+                .ToListAsync();
+            ViewData["ApprovedCalendarSlots"] = System.Text.Json.JsonSerializer.Serialize(approvedCalendarSlots, options);
 
             return View("AdminDashboard");
         }
@@ -205,7 +228,7 @@ namespace AYOKONA.Controllers
                 Email = admin.Email,
                 Campus = "PUP Quezon City",
                 Role = "Student"
-                
+
             };
 
             return View(model); // Pass admin to the view
@@ -214,14 +237,12 @@ namespace AYOKONA.Controllers
         [Authorize]
         public IActionResult AdminEditProfile()
         {
-            var email = User.Identity?.Name;
+            var email = User.FindFirstValue(ClaimTypes.Email) ?? User.Identity?.Name;
             var admin = _context.AdminAccounts.FirstOrDefault(a => a.Email == email);
-
             if (admin == null)
             {
                 return NotFound("Admin profile not found.");
             }
-
             return View(admin);
         }
 
@@ -230,22 +251,23 @@ namespace AYOKONA.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult AdminEditProfile(AdminAccount updatedAdmin)
         {
+            System.Diagnostics.Debug.WriteLine($"Posted Admin Id: {updatedAdmin.Id}");
+
             if (!ModelState.IsValid)
             {
                 return View(updatedAdmin);
             }
 
-            var email = User.Identity.Name;
-            var existingAdmin = _context.AdminAccounts.FirstOrDefault(a => a.Email == email);
-
+            var existingAdmin = _context.AdminAccounts.FirstOrDefault(a => a.Id == updatedAdmin.Id);
             if (existingAdmin == null)
             {
                 return NotFound("Admin profile not found.");
             }
 
-            // Update fields
             existingAdmin.Name = updatedAdmin.Name;
             existingAdmin.Email = updatedAdmin.Email;
+            existingAdmin.Department = updatedAdmin.Department;
+            existingAdmin.Position = updatedAdmin.Position;
 
             _context.SaveChanges();
 

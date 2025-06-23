@@ -1,9 +1,10 @@
-﻿@model AYOKONA.Entities.AdminAccount
+﻿@model AYOKONA.Models.UserEditProfileView
 
 @{
-    ViewData["Title"] = "Edit Profile";
-    Layout = "Admin_Layout";
+    ViewData["Title"] = "UserEditProfile";
+    Layout = "Students_Layout";
 }
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -266,68 +267,157 @@
 </head>
 <body>
     <div class="container">
+
         <div class="profile-section">
             <div class="profile-header">
-                <div class="profile-avatar">@Model.Name?[0]</div>
+                <div class="profile-avatar">
+                    @(!string.IsNullOrWhiteSpace(Model.Name) ? Model.Name.Split(' ').Select(n => n[0]).Aggregate("", (a, b) => a + b).ToUpper().Substring(0, Math.Min(2, Model.Name.Length)) : "U")
+                </div>
                 <div class="profile-info">
-                    <h2>@Model.Name</h2>
-                    <p>Admin</p>
+                    <h2 id="displayName">@Model.Name</h2>
+                    <p>@Model.StudentNumber</p>
                 </div>
             </div>
 
-            @if (TempData["SuccessMessage"] != null)
+            if (TempData["SuccessMessage"] != null)
             {
-                <div class="success-message">@TempData["SuccessMessage"]</div>
+            <div class="success-message" id="successMessage" style="display:block;">
+                @TempData["SuccessMessage"]
+            </div>
             }
 
-            <form asp-action="AdminEditProfile" method="post">
-                @Html.AntiForgeryToken()
-                <input type="hidden" asp-for="Id" />
+            <form asp-action="UserEditProfile" method="post">
                 <div class="form-section">
                     <div class="form-grid">
                         <div class="form-group">
-                            <label asp-for="Name"></label>
-                            <input asp-for="Name" class="form-control" required />
+                            <label for="fullName">Full Name</label>
+                            <input type="text" id="fullName" name="fullName" value="Rey Lauron" required>
                         </div>
+
                         <div class="form-group">
-                            <label asp-for="Email"></label>
-                            <input asp-for="Email" class="form-control" required />
+                            <label for="phoneNumber">Phone Number</label>
+                            <input type="tel" id="phoneNumber" name="phoneNumber" value="+63 912 345 6789">
                         </div>
+
                         <div class="form-group">
-                            <label asp-for="Position"></label>
-                            <select asp-for="Position" class="form-control">
-                                <option>Gym Administrator</option>
-                                <option>Assistant Manager</option>
-                                <option>Fitness Instructor</option>
-                                <option>Maintenance Staff</option>
-                                <option>Receptionist</option>
-                                <option>Trainer</option>
+                            <label for="position">Position</label>
+                            <select id="position" name="position" required>
+                                <option value="Gym Administrator" selected>Gym Administrator</option>
+                                <option value="Assistant Manager">Assistant Manager</option>
+                                <option value="Fitness Instructor">Fitness Instructor</option>
+                                <option value="Maintenance Staff">Maintenance Staff</option>
+                                <option value="Receptionist">Receptionist</option>
+                                <option value="Trainer">Trainer</option>
                             </select>
                         </div>
+
                         <div class="form-group">
-                            <label asp-for="Department"></label>
-                            <select asp-for="Department" class="form-control">
-                                <option>Physical Education</option>
-                                <option>Sports Science</option>
-                                <option>Recreation</option>
-                                <option>Health & Wellness</option>
-                                <option>Administration</option>
+                            <label for="Organization">Organization</label>
+                            <select id="Organization" name="Organization" required>
+                                <option value="'BYP'" selected>BYP</option>
+                                <option value="CBI">CBI</option>
+                                <option value="CHRS">CHRS</option>
+                                <option value="COL">COL</option>
+                                <option value="DOMT.Cs">DOMT.Cs</option>
+                                <option value="FBTO">FBTO</option>
+                                <option value="JMS">JMS</option>
+                                <option value="KATAGA">KATAGA</option>
+                                <option value="MUSA">MUSA</option>
+                                <option value="RCY">RCY</option>
+                                <option value="SPAS">SPAS</option>
+                                <option value="SRG">SRG</option>
+                                <option value="SSC">SSC</option>
+                                <option value="COMMITS">COMMITS</option>
+                                <option value="VOX NOVA">VOX NOVA</option>
+                                <option value="YES">YES</option>
                             </select>
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <div class="readonly-info">
+                        <h3>Read-Only Information</h3>
+                        <div class="readonly-grid">
+                            <div class="readonly-item">
+                                <label>Student ID</label>
+                                <span>EMP-2023-0045</span>
+                            </div>
+                            <div class="readonly-item">
+                                <label>Email</label>
+                                <span>reylauron@pup.edu.ph</span>
+                            </div>
+                            <div class="readonly-item">
+                                <label>Date Joined</label>
+                                <span>January 15, 2021</span>
+                            </div>
+                            <div class="readonly-item">
+                                <label>Campus</label>
+                                <span>PUP Quezon City</span>
+                            </div>
                         </div>
                     </div>
                 </div>
+
                 <div class="form-actions">
-                    <a asp-action="AdminProfile" class="btn btn-secondary">Cancel</a>
+                    <button type="button" class="btn btn-secondary" onclick="cancelEdit()">Cancel</button>
                     <button type="submit" class="btn btn-primary">Save Changes</button>
                 </div>
             </form>
         </div>
     </div>
 
-    @section Scripts {
-        @{
-            await Html.RenderPartialAsync("_ValidationScriptsPartial");
+
+    <script>
+        document.getElementById('editProfileForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            // Get form values
+            const fullName = document.getElementById('fullName').value;
+            const phoneNumber = document.getElementById('phoneNumber').value;
+            const position = document.getElementById('position').value;
+            const department = document.getElementById('department').value;
+            const address = document.getElementById('address').value;
+
+            // Simulate form submission
+            setTimeout(() => {
+                // Update display name
+                document.getElementById('displayName').textContent = fullName;
+
+                // Show success message
+                const successMessage = document.getElementById('successMessage');
+                successMessage.style.display = 'block';
+
+                // Hide success message after 3 seconds
+                setTimeout(() => {
+                    successMessage.style.display = 'none';
+                }, 3000);
+
+                console.log('Profile updated:', {
+                    fullName,
+                    phoneNumber,
+                    position,
+                    department,
+                    address
+                });
+            }, 500);
+        });
+
+        function cancelEdit() {
+
+            // Optionally redirect back to profile view
+            console.log('Edit cancelled');
         }
-    }
+
+        // Update avatar initials when name changes
+        document.getElementById('fullName').addEventListener('input', function() {
+            const name = this.value.trim();
+            if (name) {
+                const initials = name.split(' ').map(word => word.charAt(0).toUpperCase()).join('');
+                document.querySelector('.profile-avatar').textContent = initials.substring(0, 2);
+            }
+        });
+    </script>
 </body>
 </html>

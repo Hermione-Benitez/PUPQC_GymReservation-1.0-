@@ -234,7 +234,7 @@ namespace AYOKONA.Controllers
             ViewData["Periods"] = JsonSerializer.Serialize(periods, options);
 
             // Fetch approved reservations for the current month and year
-            var approvedCalendarSlots = await _context.Reservations
+            var approvedCalendarSlots = await _context.Requests
                 .Where(r => r.Status == "approved" && r.Date.Month == targetDate.Month && r.Date.Year == targetDate.Year)
                 .Select(r => new { r.Date, r.PeriodId })
                 .ToListAsync();
@@ -254,7 +254,7 @@ namespace AYOKONA.Controllers
                 .Where(r => r.Date.Month == targetDate.Month && r.Date.Year == targetDate.Year && r.PeriodId == 6)
                 .Select(r => new { r.Date })
                 .ToListAsync();
-            
+
             var wholeDayRequests = await _context.Requests
                 .Where(r => r.Date.Month == targetDate.Month && r.Date.Year == targetDate.Year && r.PeriodId == 6 && r.Status == "approved")
                 .Select(r => new { r.Date })
@@ -446,16 +446,16 @@ namespace AYOKONA.Controllers
             Debug.WriteLine($"Server-side validation check started for GroupId: {group.GroupId}, PeriodId: {model.PeriodId}, Date: {model.ReservationDate:yyyy-MM-dd}");
 
             var existingOngoingReservation = await _context.Reservations
-                .AnyAsync(r => r.GroupId == group.GroupId && 
-                               r.PeriodId == model.PeriodId && 
-                               r.Date == model.ReservationDate && 
+                .AnyAsync(r => r.GroupId == group.GroupId &&
+                               r.PeriodId == model.PeriodId &&
+                               r.Date == model.ReservationDate &&
                                r.Status == "ongoing");
             Debug.WriteLine($"Existing Ongoing Reservation found: {existingOngoingReservation}");
 
             var existingPendingRequest = await _context.Requests
-                .AnyAsync(req => req.GroupId == group.GroupId && 
-                                 req.PeriodId == model.PeriodId && 
-                                 req.Date == model.ReservationDate && 
+                .AnyAsync(req => req.GroupId == group.GroupId &&
+                                 req.PeriodId == model.PeriodId &&
+                                 req.Date == model.ReservationDate &&
                                  req.Status == "pending");
             Debug.WriteLine($"Existing Pending Request found: {existingPendingRequest}");
 
@@ -666,6 +666,18 @@ namespace AYOKONA.Controllers
             };
 
             return View(model);
+        }
+
+        public IActionResult UserEditProfile()
+        {
+            // Example: get the current user from the database
+            var email = User.FindFirstValue(ClaimTypes.Email) ?? User.Identity?.Name;
+            var user = _context.UserAccounts.FirstOrDefault(u => u.Email == email);
+            if (user == null)
+            {
+                return NotFound();
+            }
+            return View(user);
         }
 
         private async Task<UserAccount?> GetCurrentUserAccountAsync()

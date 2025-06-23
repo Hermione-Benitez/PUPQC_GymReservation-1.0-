@@ -18,5 +18,8 @@ namespace AYOKONA.Entities
 
         [Required(ErrorMessage = "Required. Please fill in this field.")]
         public string PasswordHash { get; set; }
+
+        public string Department { get; set; } = "Physical Education";
+        public string Position { get; set; } = "Gym Administrator";
     }
 }

@@ -304,7 +304,7 @@
         <h1>@Model.FullName</h1>
         <div class="role">@Model.Role</div>
         <div class="profile-buttons">
-            <button class="btn btn-edit">Edit Profile</button>
+            <a asp-controller="Users" asp-action="UserEditProfile" class="btn btn-edit">Edit Profile</a>
         </div>
     </div>
 </div>
@@ -349,7 +349,7 @@
                     <div class="info-value">@Model.Email</div>
                 </div>
             </div>
-            <button class="update-btn">Update Contact Info</button>
+            <a asp-controller="Users" asp-action="UserEditProfile" class="update-btn">Update Contact Info</a>
         </div>
 
     </div>

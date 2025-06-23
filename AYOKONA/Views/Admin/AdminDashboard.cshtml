@@ -3,138 +3,145 @@
     Layout = "Admin_Layout";
 }
 
-    <style>
+<style>
+    .calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(6, 1fr);
+        gap: 1px;
+        background-color: #d9d9d9;
+        border-radius: 0.5rem;
+        overflow: hidden;
+    }
+
+    .calendar-header-cell, .calendar-cell {
+        padding: 0.75rem 0.5rem;
+        text-align: center;
+        background-color: white;
+        font-size: 0.875rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid #d9d9d9;
+        color: #970c10;
+        cursor: default; /* Make cells not directly clickable unless specific action needed */
+    }
+
+        .calendar-cell:not(.reserved-slot) {
+            font-weight: bold;
+        }
+
+    .calendar-header-cell {
+        background-color: #f3f4f6;
+        font-weight: 600;
+        color: #970c10;
+    }
+
+    .reserved {
+        background-color: #dc3545 !important; /* Use a distinct red color */
+        color: white !important;
+        cursor: not-allowed;
+    }
+
+    .reserved-slot {
+        background-color: #970c10;
+        color: white;
+        font-weight: 500;
+    }
+
+    .status-approved {
+        background-color: #00bf63;
+        color: white;
+    }
+
+    .status-pending {
+        background-color: #ffb000;
+        color: white;
+    }
+
+    .status-rejected,
+    .status-denied {
+        background-color: dimgrey;
+        color: white;
+    }
+
+    .reservation-item-bg {
+        background-color: #ffb000;
+        border-color: #ffb000;
+    }
+
+    .month-nav-arrow {
+        font-size: 1.5rem;
+        line-height: 1;
+        color: #970c10;
+    }
+
+    @@media (max-width: 640px) {
         .calendar-grid {
-            display: grid;
-            grid-template-columns: repeat(6, 1fr);
-            gap: 1px;
-            background-color: #d9d9d9;
-            border-radius: 0.5rem;
-            overflow: hidden;
+            overflow-x: auto;
         }
 
-        .calendar-header-cell, .calendar-cell {
-            padding: 0.75rem 0.5rem;
-            text-align: center;
-            background-color: white;
-            font-size: 0.875rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 1px solid #d9d9d9;
-            color: #970c10;
-        }
-
-            .calendar-cell:not(.reserved-slot) {
-                font-weight: bold;
+            .calendar-grid > div {
+                min-width: 80px;
             }
+    }
 
-        .calendar-header-cell {
-            background-color: #f3f4f6;
-            font-weight: 600;
-            color: #970c10;
+    /* Status badge styles */
+    .status-badge {
+        padding: 6px 15px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: bold;
+        color: white;
+    }
+
+    /* Reservation item and details styles */
+    .reservation-item {
+        background: #970c10;
+        border: 2px solid #970c10;
+        border-radius: 8px;
+        margin-bottom: 15px;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        cursor: pointer; /* To toggle details */
+    }
+
+        .reservation-item:hover {
+            border-color: #970c10;
+            box-shadow: 0 4px 12px rgba(151, 12, 16, 0.2);
         }
 
-        .reserved-slot {
-            background-color: #970c10;
-            color: white;
-            font-weight: 500;
-        }
+    .request-header {
+        background-color: #970c10;
+        color: white;
+        padding: 12px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
 
-        .status-approved {
-            background-color: #00bf63;
-            color: white;
-        }
+    .request-info {
+        display: flex;
+        gap: 30px;
+        font-size: 14px;
+        color: white;
+        font-weight: bold;
+    }
 
-        .status-pending {
-            background-color: #ffb000;
-            color: white;
-        }
+    .empty-state {
+        text-align: center;
+        color: white;
+        padding: 50px;
+        font-style: italic;
+    }
 
-        .status-rejected,
-        .status-denied {
-            background-color: dimgrey;
-            color: white;
-        }
-
-        .reservation-item-bg {
-            background-color: #ffb000;
-            border-color: #ffb000;
-        }
-
-        .month-nav-arrow {
-            font-size: 1.5rem;
-            line-height: 1;
-            color: #970c10;
-        }
-
-        @@media (max-width: 640px) {
-            .calendar-grid {
-                overflow-x: auto;
-            }
-
-                .calendar-grid > div {
-                    min-width: 80px;
-                }
-        }
-
-        /* Status badge styles */
-        .status-badge {
-            padding: 6px 15px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: bold;
-            color: white;
-        }
-
-        /* Reservation item and details styles */
-        .reservation-item {
-            background: #970c10;
-            border: 2px solid #970c10;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            overflow: hidden;
-            transition: all 0.3s ease;
-            cursor: pointer; /* To toggle details */
-        }
-
-            .reservation-item:hover {
-                border-color: #970c10;
-                box-shadow: 0 4px 12px rgba(151, 12, 16, 0.2);
-            }
-
-        .request-header {
-            background-color: #970c10;
-            color: white;
-            padding: 12px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
+    /* Media queries */
+    @@media (max-width: 900px) {
         .request-info {
-            display: flex;
-            gap: 30px;
-            font-size: 14px;
-            color: white;
-            font-weight: bold;
+            flex-direction: column;
+            gap: 5px;
         }
-
-        .empty-state {
-            text-align: center;
-            color: white;
-            padding: 50px;
-            font-style: italic;
-        }
-
-        /* Media queries */
-        @@media (max-width: 900px) {
-            .request-info {
-                flex-direction: column;
-                gap: 5px;
-            }
-        }
-    </style>
+    }
+</style>
 
 <div class="w-full p-6 flex-grow flex flex-col">
     <h1 class="text-3xl font-bold mb-4 text-center" style="color: #970c10;">Admin Dashboard</h1>
@@ -286,6 +293,25 @@
             });
         }
 
+        /* --- CALENDAR SCRIPT --- */
+
+        let today = new Date();
+        let currentMonth = today.getMonth();
+        let currentYear = today.getFullYear();
+
+        // Get data from ViewData
+        const allPeriods = JSON.parse('@Html.Raw(ViewData["Periods"])');
+        const approvedCalendarSlots = JSON.parse('@Html.Raw(ViewData["ApprovedCalendarSlots"])');
+
+        // Initialize current month and year from ViewData if available
+        const initialMonth = @(ViewData["CurrentMonth"] ?? "null");
+        const initialYear = @(ViewData["CurrentYear"] ?? "null");
+
+        if (initialMonth !== null && initialYear !== null) {
+            currentMonth = initialMonth - 1; // Month is 0-indexed in JavaScript
+            currentYear = initialYear;
+        }
+
         function getDaysInMonth(month, year) {
             return new Date(year, month + 1, 0).getDate();
         }
@@ -307,101 +333,74 @@
             calendarGrid.innerHTML = ''; // Clear existing content
 
             const daysInMonth = getDaysInMonth(month, year);
+            const periods = allPeriods;
 
-            document.getElementById('currentMonthYear').textContent = new Date(year, month).toLocaleString('en-US', { month: 'long', year: 'numeric' });
-            document.getElementById('currentMonthYear').style.color = '#970c10';
+            const approvedSlotsSet = new Set(
+                approvedCalendarSlots.map(slot => {
+                    const date = slot.Date.split('T')[0];
+                    return `${date}_${slot.PeriodId}`;
+                })
+            );
 
-            // Update month navigation text and links
-            const prevMonthDate = new Date(year, month - 1);
-            document.getElementById('prevMonthText').textContent = prevMonthDate.toLocaleString('en-US', { month: 'long' });
-            document.getElementById('prevMonthText').style.color = '#ffb000';
-            document.getElementById('prevMonthBtn').onclick = () => navigateMonth(month - 1, year);
+            // Create headers
+            calendarGrid.style.gridTemplateColumns = `100px repeat(${periods.length}, 1fr)`;
 
-            const nextMonthDate = new Date(year, month + 1);
-            document.getElementById('nextMonthText').textContent = nextMonthDate.toLocaleString('en-US', { month: 'long' });
-            document.getElementById('nextMonthText').style.color = '#ffb000';
-            document.getElementById('nextMonthBtn').onclick = () => navigateMonth(month + 1, year);
-
-            // Set grid columns dynamically based on periods + 1 for the 'Days' column
-            calendarGrid.style.gridTemplateColumns = `repeat(${allPeriods.length + 1}, 1fr)`;
-
-            // Create header row
             const daysHeaderCell = document.createElement('div');
             daysHeaderCell.className = 'calendar-header-cell';
             daysHeaderCell.textContent = 'Days';
             calendarGrid.appendChild(daysHeaderCell);
 
-            allPeriods.forEach(period => {
+            periods.forEach(period => {
                 const headerCell = document.createElement('div');
                 headerCell.className = 'calendar-header-cell';
                 headerCell.textContent = `${formatTime(period.StartTime)} - ${formatTime(period.EndTime)}`;
                 calendarGrid.appendChild(headerCell);
             });
 
-            // Populate calendar days
-            for (let day = 1; day <= daysInMonth; day++) {
-                const date = new Date(year, month, day);
-                // Ensure consistent date formatting for all comparisons
-                const formattedDateForComparison = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
-
-                // Day cell
+            for (let i = 1; i <= daysInMonth; i++) {
                 const dayCell = document.createElement('div');
                 dayCell.className = 'calendar-cell';
-                dayCell.textContent = day;
+                dayCell.textContent = i;
                 calendarGrid.appendChild(dayCell);
 
-                allPeriods.forEach(period => {
-                    const slotCell = document.createElement('div');
-                    slotCell.className = 'calendar-cell';
+                periods.forEach(period => {
+                    const cell = document.createElement('div');
+                    cell.className = 'calendar-cell';
+                    const currentDate = new Date(Date.UTC(year, month, i));
+                    const dateString = currentDate.toISOString().split('T')[0];
+                    const slotIdentifier = `${dateString}_${period.PeriodId}`;
 
-                    let isSlotReserved = false; // Combined flag for any reserved status
-
-                    // Check for Whole Day Blocked Dates (from Reservations/Requests PeriodId 6)
-                    if (wholeDayBlockedDates.some(blockedDateString => {
-                        const bd = new Date(blockedDateString);
-                        return bd.getFullYear() === date.getFullYear() && bd.getMonth() === date.getMonth() && bd.getDate() === date.getDate();
-                    })) {
-                        isSlotReserved = true;
+                    if (approvedSlotsSet.has(slotIdentifier)) {
+                        cell.classList.add('reserved');
+                        cell.textContent = 'Reserved';
                     }
 
-                    // Check for Fully Booked Slots (3+ reservations)
-                    if (!isSlotReserved) { // Only check if not already reserved by whole day
-                        for (const bookedSlot of fullyBookedSlots) {
-                            const bsDate = new Date(bookedSlot.date);
-                            if (bsDate.getFullYear() === date.getFullYear() && bsDate.getMonth() === date.getMonth() && bsDate.getDate() === date.getDate() && bookedSlot.periodId === period.PeriodId) {
-                                isSlotReserved = true;
-                                break;
-                            }
-                        }
-                    }
-
-                    // Check for Approved Calendar Slots (any approved reservation)
-                    if (!isSlotReserved) { // Only check if not already reserved by previous conditions
-                        for (const approvedSlot of approvedCalendarSlots) {
-                            const asDate = new Date(approvedSlot.date);
-                            if (asDate.getFullYear() === date.getFullYear() && asDate.getMonth() === date.getMonth() && asDate.getDate() === date.getDate() && approvedSlot.periodId === period.PeriodId) {
-                                isSlotReserved = true;
-                                break;
-                            }
-                        }
-                    }
-
-                    if (isSlotReserved) {
-                        slotCell.classList.add('reserved-slot');
-                    }
-
-                    calendarGrid.appendChild(slotCell);
+                    calendarGrid.appendChild(cell);
                 });
             }
+
+            document.getElementById('currentMonthYear').textContent = new Date(year, month).toLocaleString('en-US', { month: 'long', year: 'numeric' });
+            document.getElementById('currentMonthYear').style.color = '#970c10';
+
+            const prevMonthDate = new Date(year, month - 1, 1);
+            document.getElementById('prevMonthText').textContent = prevMonthDate.toLocaleString('en-US', { month: 'long' });
+            document.getElementById('prevMonthText').style.color = '#ffb000';
+            document.getElementById('prevMonthBtn').onclick = () => navigateMonth(month - 1, year);
+
+            const nextMonthDate = new Date(year, month + 1, 1);
+            document.getElementById('nextMonthText').textContent = nextMonthDate.toLocaleString('en-US', { month: 'long' });
+            document.getElementById('nextMonthText').style.color = '#ffb000';
+            document.getElementById('nextMonthBtn').onclick = () => navigateMonth(month + 1, year);
         }
 
         function navigateMonth(month, year) {
             const newDate = new Date(year, month);
-            // Update URL parameters and reload page to fetch new data from server
-            window.location.href = `/Users/StudentDashboard?month=${newDate.getMonth() + 1}&year=${newDate.getFullYear()}`;
+            const newMonth = newDate.getMonth() + 1;
+            const newYear = newDate.getFullYear();
+            window.location.href = `/Admin/AdminDashboard?month=${newMonth}&year=${newYear}`;
         }
 
-        // Initial render on page load
+        // Initial render
         renderCalendar(currentMonth, currentYear);
     </script>
 }
