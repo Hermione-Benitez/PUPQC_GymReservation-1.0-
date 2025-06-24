@@ -325,6 +325,25 @@
             // Set initial active tab
             document.getElementById('approved-content').classList.add('active');
             document.querySelector('.tab').classList.add('active');
+
+            // Show success popup and switch to Pending tab if redirected after submission
+            @if (TempData["SubmissionSuccess"] != null)
+            {
+                <text>
+                Swal.fire({
+                    title: 'Success!',
+                    text: 'Your reservation has been submitted successfully.',
+                    icon: 'success',
+                    confirmButtonText: 'OK'
+                }).then(() => {
+                    // Switch to Pending tab after popup
+                    const pendingTab = document.querySelector('.tab:nth-child(2)');
+                    if (pendingTab) {
+                        pendingTab.click();
+                    }
+                });
+                </text>
+            }
         });
 
         function switchTab(event, tabName) {

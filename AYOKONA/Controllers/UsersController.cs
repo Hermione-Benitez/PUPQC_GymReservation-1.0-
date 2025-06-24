@@ -535,10 +535,8 @@ namespace AYOKONA.Controllers
             await _context.SaveChangesAsync();
 
             TempData["SubmissionSuccess"] = true; // Set a flag for success message
-            // Instead of redirecting, return the same view with updated data
-            ViewData["Periods"] = await _context.Periods.OrderBy(p => p.StartTime).ToListAsync();
-            await PopulateReservationSlotsViewData(); // Ensure all slot data is re-populated
-            return View("AddReservationForm", model);
+                                                  // Redirect to UserReservation page after successful submission
+            return RedirectToAction("UserReservation");
         }
 
         // Helper method to populate ViewData for reservation slots
