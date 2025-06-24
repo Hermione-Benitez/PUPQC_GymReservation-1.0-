@@ -118,7 +118,7 @@
             <p>Enter your credentials below</p>
 
 
-            <form asp-action="StudentLogin" asp-controller="Account" method="post">
+            <form asp-action="StudentLogin" asp-controller="Users" method="post">
                 @Html.AntiForgeryToken()
                 <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
