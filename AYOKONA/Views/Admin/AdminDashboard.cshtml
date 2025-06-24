@@ -37,8 +37,8 @@
     }
 
     .reserved {
-        background-color: #dc3545 !important; /* Use a distinct red color */
-        color: white !important;
+        background-color: #970c10;
+        color: white;
         cursor: not-allowed;
     }
 
@@ -159,7 +159,7 @@
     </div>
 
     <div class="mx-auto" style="width: 75%;">
-        <h2 class="text-2xl font-semibold mt-6 mb-2" style="color: #970c10;">Gym Availability</h2>
+        <h2 id="GymAvailability" class="text-2xl font-semibold mt-6 mb-2" style="color: #970c10;">Gym Availability</h2>
         <div class="bg-white p-8 rounded-lg shadow-lg">
             <div class="flex items-center justify-between mb-4">
                 <button id="prevMonthBtn" class="hover:text-blue-800 transition-colors text-lg font-semibold">
@@ -184,9 +184,118 @@
     <script>
         const allRequestsData = JSON.parse('@Html.Raw(ViewData["ReservationRequests"])');
 
+        // Calendar data
+        const allPeriods = JSON.parse('@Html.Raw(ViewData["Periods"])');
+        const approvedCalendarSlots = JSON.parse('@Html.Raw(ViewData["ApprovedCalendarSlots"])');
+        const wholeDayBlockedDates = JSON.parse('@Html.Raw(ViewData["WholeDayApprovedDates"])').map(dateString => new Date(dateString).toLocaleDateString());
+
+        // Initialize current month and year from ViewData if available
+        let currentMonth = @(ViewData["CurrentMonth"] ?? "null") - 1;
+        let currentYear = @(ViewData["CurrentYear"] ?? "null");
+
+        if (currentMonth === null || currentYear === null) {
+            const today = new Date();
+            currentMonth = today.getMonth();
+            currentYear = today.getFullYear();
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             renderReservationRequests();
+            renderCalendar(currentMonth, currentYear);
         });
+
+        function getDaysInMonth(month, year) {
+            return new Date(year, month + 1, 0).getDate();
+        }
+
+        function formatTime(timeSpanString) {
+            if (!timeSpanString) return 'N/A';
+            const parts = timeSpanString.split(':');
+            const hours = parseInt(parts[0], 10);
+            const minutes = parseInt(parts[1], 10);
+            const dateForTime = new Date();
+            dateForTime.setHours(hours);
+            dateForTime.setMinutes(minutes);
+            dateForTime.setSeconds(0);
+            return dateForTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+        }
+
+        function renderCalendar(month, year) {
+            const calendarGrid = document.getElementById('calendarGrid');
+            calendarGrid.innerHTML = '';
+
+            const daysInMonth = getDaysInMonth(month, year);
+            const periods = allPeriods;
+
+            const approvedSlotsSet = new Set(
+                approvedCalendarSlots.map(slot => {
+                    const date = new Date(slot.Date).toLocaleDateString();
+                    return `${date}_${slot.PeriodId}`;
+                })
+            );
+
+            calendarGrid.style.gridTemplateColumns = `100px repeat(${periods.length}, 1fr)`;
+
+            const daysHeaderCell = document.createElement('div');
+            daysHeaderCell.className = 'calendar-header-cell';
+            daysHeaderCell.textContent = 'Days';
+            calendarGrid.appendChild(daysHeaderCell);
+
+            periods.forEach(period => {
+                const headerCell = document.createElement('div');
+                headerCell.className = 'calendar-header-cell';
+                headerCell.textContent = `${formatTime(period.StartTime)} - ${formatTime(period.EndTime)}`;
+                calendarGrid.appendChild(headerCell);
+            });
+
+            for (let i = 1; i <= daysInMonth; i++) {
+                const dayCell = document.createElement('div');
+                dayCell.className = 'calendar-cell';
+                dayCell.textContent = i;
+                const currentDate = new Date(year, month, i);
+                const isWholeDayBlocked = wholeDayBlockedDates.includes(currentDate.toLocaleDateString());
+
+                calendarGrid.appendChild(dayCell);
+
+                periods.forEach(period => {
+                    const cell = document.createElement('div');
+                    cell.className = 'calendar-cell';
+                    const slotIdentifier = `${currentDate.toLocaleDateString()}_${period.PeriodId}`;
+
+                    if (isWholeDayBlocked) {
+                        cell.classList.add('reserved');
+                        cell.textContent = 'Reserved';
+                    } else if (approvedSlotsSet.has(slotIdentifier)) {
+                        cell.classList.add('reserved-slot');
+                        cell.textContent = 'Reserved';
+                    } else {
+                        cell.textContent = '';
+                    }
+
+                    calendarGrid.appendChild(cell);
+                });
+            }
+
+            document.getElementById('currentMonthYear').textContent = new Date(year, month).toLocaleString('en-US', { month: 'long', year: 'numeric' });
+            document.getElementById('currentMonthYear').style.color = '#970c10';
+
+            const prevMonthDate = new Date(year, month - 1, 1);
+            document.getElementById('prevMonthText').textContent = prevMonthDate.toLocaleString('en-US', { month: 'long' });
+            document.getElementById('prevMonthText').style.color = '#ffb000';
+            document.getElementById('prevMonthBtn').onclick = () => navigateMonth(month - 1, year);
+
+            const nextMonthDate = new Date(year, month + 1, 1);
+            document.getElementById('nextMonthText').textContent = nextMonthDate.toLocaleString('en-US', { month: 'long' });
+            document.getElementById('nextMonthText').style.color = '#ffb000';
+            document.getElementById('nextMonthBtn').onclick = () => navigateMonth(month + 1, year);
+        }
+
+        function navigateMonth(month, year) {
+            const newDate = new Date(year, month);
+            const newMonth = newDate.getMonth() + 1;
+            const newYear = newDate.getFullYear();
+            window.location.href = `/Admin/AdminDashboard?month=${newMonth}&year=${newYear}`;
+        }
 
         function showReservationDetails(request) {
             const requestDate = new Date(request.Date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
@@ -292,115 +401,5 @@
                 requestDiv.addEventListener('click', () => showReservationDetails(request));
             });
         }
-
-        /* --- CALENDAR SCRIPT --- */
-
-        let today = new Date();
-        let currentMonth = today.getMonth();
-        let currentYear = today.getFullYear();
-
-        // Get data from ViewData
-        const allPeriods = JSON.parse('@Html.Raw(ViewData["Periods"])');
-        const approvedCalendarSlots = JSON.parse('@Html.Raw(ViewData["ApprovedCalendarSlots"])');
-
-        // Initialize current month and year from ViewData if available
-        const initialMonth = @(ViewData["CurrentMonth"] ?? "null");
-        const initialYear = @(ViewData["CurrentYear"] ?? "null");
-
-        if (initialMonth !== null && initialYear !== null) {
-            currentMonth = initialMonth - 1; // Month is 0-indexed in JavaScript
-            currentYear = initialYear;
-        }
-
-        function getDaysInMonth(month, year) {
-            return new Date(year, month + 1, 0).getDate();
-        }
-
-        function formatTime(timeSpanString) {
-            if (!timeSpanString) return 'N/A';
-            const parts = timeSpanString.split(':');
-            const hours = parseInt(parts[0], 10);
-            const minutes = parseInt(parts[1], 10);
-            const dateForTime = new Date();
-            dateForTime.setHours(hours);
-            dateForTime.setMinutes(minutes);
-            dateForTime.setSeconds(0);
-            return dateForTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
-        }
-
-        async function renderCalendar(month, year) {
-            const calendarGrid = document.getElementById('calendarGrid');
-            calendarGrid.innerHTML = ''; // Clear existing content
-
-            const daysInMonth = getDaysInMonth(month, year);
-            const periods = allPeriods;
-
-            const approvedSlotsSet = new Set(
-                approvedCalendarSlots.map(slot => {
-                    const date = slot.Date.split('T')[0];
-                    return `${date}_${slot.PeriodId}`;
-                })
-            );
-
-            // Create headers
-            calendarGrid.style.gridTemplateColumns = `100px repeat(${periods.length}, 1fr)`;
-
-            const daysHeaderCell = document.createElement('div');
-            daysHeaderCell.className = 'calendar-header-cell';
-            daysHeaderCell.textContent = 'Days';
-            calendarGrid.appendChild(daysHeaderCell);
-
-            periods.forEach(period => {
-                const headerCell = document.createElement('div');
-                headerCell.className = 'calendar-header-cell';
-                headerCell.textContent = `${formatTime(period.StartTime)} - ${formatTime(period.EndTime)}`;
-                calendarGrid.appendChild(headerCell);
-            });
-
-            for (let i = 1; i <= daysInMonth; i++) {
-                const dayCell = document.createElement('div');
-                dayCell.className = 'calendar-cell';
-                dayCell.textContent = i;
-                calendarGrid.appendChild(dayCell);
-
-                periods.forEach(period => {
-                    const cell = document.createElement('div');
-                    cell.className = 'calendar-cell';
-                    const currentDate = new Date(Date.UTC(year, month, i));
-                    const dateString = currentDate.toISOString().split('T')[0];
-                    const slotIdentifier = `${dateString}_${period.PeriodId}`;
-
-                    if (approvedSlotsSet.has(slotIdentifier)) {
-                        cell.classList.add('reserved');
-                        cell.textContent = 'Reserved';
-                    }
-
-                    calendarGrid.appendChild(cell);
-                });
-            }
-
-            document.getElementById('currentMonthYear').textContent = new Date(year, month).toLocaleString('en-US', { month: 'long', year: 'numeric' });
-            document.getElementById('currentMonthYear').style.color = '#970c10';
-
-            const prevMonthDate = new Date(year, month - 1, 1);
-            document.getElementById('prevMonthText').textContent = prevMonthDate.toLocaleString('en-US', { month: 'long' });
-            document.getElementById('prevMonthText').style.color = '#ffb000';
-            document.getElementById('prevMonthBtn').onclick = () => navigateMonth(month - 1, year);
-
-            const nextMonthDate = new Date(year, month + 1, 1);
-            document.getElementById('nextMonthText').textContent = nextMonthDate.toLocaleString('en-US', { month: 'long' });
-            document.getElementById('nextMonthText').style.color = '#ffb000';
-            document.getElementById('nextMonthBtn').onclick = () => navigateMonth(month + 1, year);
-        }
-
-        function navigateMonth(month, year) {
-            const newDate = new Date(year, month);
-            const newMonth = newDate.getMonth() + 1;
-            const newYear = newDate.getFullYear();
-            window.location.href = `/Admin/AdminDashboard?month=${newMonth}&year=${newYear}`;
-        }
-
-        // Initial render
-        renderCalendar(currentMonth, currentYear);
     </script>
 }

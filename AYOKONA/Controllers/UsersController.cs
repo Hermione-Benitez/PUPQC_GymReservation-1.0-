@@ -751,22 +751,7 @@ namespace AYOKONA.Controllers
                 );
             }
 
-            // Call this after updating the user section, if it changed
-            await UpdateSectionGroupNameAsync(model.Section, model.Section);
-
             return RedirectToAction("UsersProfile");
-        }
-
-        // Call this after updating the user section, if it changed
-        private async Task UpdateSectionGroupNameAsync(string oldSection, string newSection)
-        {
-            if (string.IsNullOrWhiteSpace(oldSection) || string.IsNullOrWhiteSpace(newSection)) return;
-            var group = await _context.Groups.FirstOrDefaultAsync(g => g.Name == oldSection && g.Category == "section");
-            if (group != null)
-            {
-                group.Name = newSection;
-                await _context.SaveChangesAsync();
-            }
         }
 
         private async Task<UserAccount?> GetCurrentUserAccountAsync()
