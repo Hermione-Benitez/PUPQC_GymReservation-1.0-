@@ -124,6 +124,14 @@ namespace AYOKONA.Controllers
                 .ToListAsync();
             ViewData["ApprovedCalendarSlots"] = System.Text.Json.JsonSerializer.Serialize(approvedCalendarSlots, options);
 
+            // Fetch 'Whole Day' approved requests to block out the entire day on the calendar
+            var wholeDayApprovedDates = await _context.Requests
+                .Where(r => r.Status == "approved" && r.PeriodId == 6 && r.Date.Month == targetDate.Month && r.Date.Year == targetDate.Year)
+                .Select(r => r.Date.Date) // Select only the date part
+                .Distinct()
+                .ToListAsync();
+            ViewData["WholeDayApprovedDates"] = System.Text.Json.JsonSerializer.Serialize(wholeDayApprovedDates, options);
+
             return View("AdminDashboard");
         }
 
