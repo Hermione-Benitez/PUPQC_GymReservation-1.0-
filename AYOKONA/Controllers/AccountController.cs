@@ -108,44 +108,6 @@ namespace AYOKONA.Controllers
             return View("~/Views/Account/StudentLogin.cshtml");
         }
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> StudentLogin(StudentLoginViewModel model)
-        {
-            if (!ModelState.IsValid)
-                return View("~/Views/Account/StudentLogin.cshtml", model);
-
-            var hashedPassword = model.GetHashedPassword();
-            var user = _context.UserAccounts
-                .FirstOrDefault(u => u.StudentNumber == model.StudentNumber && u.PasswordHash == hashedPassword);
-
-            if (user != null)
-            {
-                var claims = new List<Claim>
-                {
-                    new Claim(ClaimTypes.Name, user.Name),
-                    new Claim("Name", user.Name),
-                    new Claim(ClaimTypes.Role, "Student")
-                };
-
-                var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-                var authProperties = new AuthenticationProperties
-                {
-                    IsPersistent = true
-                };
-
-                await HttpContext.SignInAsync(
-                    CookieAuthenticationDefaults.AuthenticationScheme,
-                    new ClaimsPrincipal(claimsIdentity),
-                    authProperties);
-
-                TempData["SuccessMessage"] = "Login successful!";
-                return RedirectToAction("Homepage");
-            }
-
-            ModelState.AddModelError("", "Invalid student number or password.");
-            return View("~/Views/Account/StudentLogin.cshtml", model);
-        }
 
         [Authorize]
         public IActionResult Homepage()
