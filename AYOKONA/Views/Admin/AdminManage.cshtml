@@ -182,9 +182,9 @@
             display: none; /* Hide all tab contents by default */
         }
 
-        .tab-content.active {
-            display: block;
-        }
+            .tab-content.active {
+                display: block;
+            }
 
         @@media (max-width: 900px) {
             .container {
@@ -215,40 +215,40 @@
             color: white;
         }
 
-        .edit-button:hover {
-            background-color: #e69500;
-            transform: translateY(-1px);
-        }
+            .edit-button:hover {
+                background-color: #e69500;
+                transform: translateY(-1px);
+            }
 
         .save-button {
             background-color: #00bf63;
             color: white;
         }
 
-        .save-button:hover {
-            background-color: #00a354;
-            transform: translateY(-1px);
-        }
+            .save-button:hover {
+                background-color: #00a354;
+                transform: translateY(-1px);
+            }
 
         .cancel-button {
             background-color: dimgrey;
             color: white;
         }
 
-        .cancel-button:hover {
-            background-color: #555;
-            transform: translateY(-1px);
-        }
+            .cancel-button:hover {
+                background-color: #555;
+                transform: translateY(-1px);
+            }
 
         .discard-button {
             background-color: #dc3545; /* Red color from the image */
             color: white;
         }
 
-        .discard-button:hover {
-            background-color: #c82333; /* Darker red on hover */
-            transform: translateY(-1px);
-        }
+            .discard-button:hover {
+                background-color: #c82333; /* Darker red on hover */
+                transform: translateY(-1px);
+            }
 
         .button-group {
             display: flex;
@@ -308,7 +308,7 @@
                     <div id="approved-content" class="tab-content active">
                         @if (ViewData["Approved"] != null && ((List<Request>)ViewData["Approved"]).Any())
                         {
-                            foreach (var request in (List<Request>)ViewData["Approved"])
+                            foreach (var request in ((List<Request>)ViewData["Approved"]).OrderByDescending(r => r.Date))
                             {
                                 <div class="reservation-item">
                                     <div class="reservation-header">
@@ -332,7 +332,7 @@
                                             <span class="detail-value">@request.Group.Category</span>
                                         </div>
                                         <div class="detail-item">
-                                            <span class="detail-label">Class / Organization :</span>
+                                            <span class="detail-label">Group Name:</span>
                                             <span class="detail-value">@request.Group.Name</span>
                                         </div>
                                         <div class="detail-item">
@@ -356,7 +356,7 @@
                     <div id="pending-content" class="tab-content">
                         @if (ViewData["Pending"] != null && ((List<Request>)ViewData["Pending"]).Any())
                         {
-                            foreach (var request in (List<Request>)ViewData["Pending"])
+                            foreach (var request in ((List<Request>)ViewData["Pending"]).OrderByDescending(r => r.Date))
                             {
                                 <div class="reservation-item">
                                     <div class="reservation-header">
@@ -412,7 +412,7 @@
                     <div id="cancelled-content" class="tab-content">
                         @if (ViewData["Declined"] != null && ((List<Request>)ViewData["Declined"]).Any())
                         {
-                            foreach (var request in (List<Request>)ViewData["Declined"])
+                            foreach (var request in ((List<Request>)ViewData["Declined"]).OrderByDescending(r => r.Date))
                             {
                                 <div class="reservation-item">
                                     <div class="reservation-header">
