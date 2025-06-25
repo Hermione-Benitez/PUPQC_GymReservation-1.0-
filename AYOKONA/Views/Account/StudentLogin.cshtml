@@ -116,6 +116,14 @@
             <p class="font-weight-bold">Welcome to PUPQC Gym Reservation Portal</p>
             <p>Enter your credentials below</p>
 
+
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert alert-success" role="alert">
+                    @TempData["SuccessMessage"]
+                </div>
+            }
+
             <form asp-action="StudentLogin" asp-controller="Users" method="post">
                 <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 

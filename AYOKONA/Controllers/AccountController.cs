@@ -93,7 +93,7 @@ namespace AYOKONA.Controllers
             _context.SaveChanges();
 
             TempData["SuccessMessage"] = "Registration successful!";
-            return RedirectToAction("Register");
+            return RedirectToAction("StudentLogin");
         }
 
         [HttpGet]
