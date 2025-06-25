@@ -2,7 +2,6 @@
 
 @{
     ViewData["Title"] = "Login";
-    Layout = "_Layout";
 }
 <style>
     body {
@@ -117,13 +116,20 @@
             <p class="font-weight-bold">Welcome to PUPQC Gym Reservation Portal</p>
             <p>Enter your credentials below</p>
 
+
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert alert-success" role="alert">
+                    @TempData["SuccessMessage"]
+                </div>
+            }
+
             <form asp-action="StudentLogin" asp-controller="Users" method="post">
-                @Html.AntiForgeryToken()
                 <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
                 <div class="form-group text-left">
                     <label asp-for="StudentNumber" class="control-label">Student Number</label>
-                    <input asp-for="StudentNumber" class="form-control" placeholder="2025-XXXXX-CM-0" />
+                    <input asp-for="StudentNumber" class="form-control student-number-input" placeholder="2025-XXXXX-CM-0" />
                     <span asp-validation-for="StudentNumber" class="text-danger"></span>
                 </div>
 

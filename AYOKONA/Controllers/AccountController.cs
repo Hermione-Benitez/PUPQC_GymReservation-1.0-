@@ -27,7 +27,7 @@ namespace AYOKONA.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult AdminRegister(AdminRegisterViewModel model)
         {
-            if (!ModelState.IsValid)
+            if (!ModelState.IsValid) //If model state is not valid, it returns the view with validation errors.
             {
                 return View(model);
             }
@@ -93,7 +93,7 @@ namespace AYOKONA.Controllers
             _context.SaveChanges();
 
             TempData["SuccessMessage"] = "Registration successful!";
-            return RedirectToAction("Register");
+            return RedirectToAction("StudentLogin", new { registered = true });
         }
 
         [HttpGet]
