@@ -61,6 +61,7 @@
         background-color: #8B0000;
         color: white;
         width: 100%;
+        margin-top: 1.5rem;
     }
 
         .btn-login:hover {
@@ -127,9 +128,10 @@
                 <div class="form-group">
                     <label asp-for="Password" class="control-label"></label>
                     <input asp-for="Password" type="password" class="form-control" placeholder="Enter your password" />
+
                     <span asp-validation-for="Password" class="text-danger"></span>
                 </div>
-                <p class="mt-3">Register dito. <a asp-action="AdminRegister" asp-controller="Account" class="create-link">Register</a></p>
+                
                 <input type="submit" value="Log In" class="btn btn-login" />
             </form>
         </div>
