@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AYOKONA.Controllers
 {
-    public class AdminController : Controller
+    public class AdminController : Controller 
     {
         private readonly ApplicationDbContext _context;
 

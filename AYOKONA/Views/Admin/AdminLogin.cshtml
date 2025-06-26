@@ -129,7 +129,12 @@
                     <input asp-for="Password" type="password" class="form-control" placeholder="Enter your password" />
                     <span asp-validation-for="Password" class="text-danger"></span>
                 </div>
-                <p class="mt-3">Register dito. <a asp-action="AdminRegister" asp-controller="Account" class="create-link">Register</a></p>
+
+                <div class="d-flex justify-content-between mb-3">
+                    <span></span>
+                    <a asp-controller="Home" asp-action="ForgotPass" class="forgot-link text-success">Forgot password?</a>
+                </div>
+
                 <input type="submit" value="Log In" class="btn btn-login" />
             </form>
         </div>

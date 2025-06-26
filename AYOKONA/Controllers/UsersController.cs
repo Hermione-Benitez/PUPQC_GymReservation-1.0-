@@ -270,7 +270,7 @@ namespace AYOKONA.Controllers
             return View("StudentDashboard");
         }
 
-        [HttpGet]
+        [HttpGet] 
         public async Task<IActionResult> AddReservationForm()
         {
             var userAccount = await GetCurrentUserAccountAsync();
@@ -365,6 +365,7 @@ namespace AYOKONA.Controllers
         public async Task<IActionResult> SubmitReservation(ReservationFormViewModel model)
         {
             var userAccount = await GetCurrentUserAccountAsync();
+
             if (userAccount == null)
             {
                 ModelState.AddModelError("", "You are not logged in.");
