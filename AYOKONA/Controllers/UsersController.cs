@@ -137,14 +137,14 @@ namespace AYOKONA.Controllers
         }
 
         [HttpGet]
-        public IActionResult StudentLogin() => View();
+        public IActionResult StudentLogin() => View("~/Views/Account/StudentLogin.cshtml");
 
-        [HttpPost]
+        [HttpPost("StudentLogin")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> StudentLogin(StudentLoginViewModel model)
         {
             if (!ModelState.IsValid)
-                return View(model);
+                return View("~/Views/Account/StudentLogin.cshtml", model);
 
             var hashedPassword = model.GetHashedPassword();
 
@@ -174,7 +174,7 @@ namespace AYOKONA.Controllers
             }
 
             ModelState.AddModelError(string.Empty, "Invalid student number or password.");
-            return View(model);
+            return View("~/Views/Account/StudentLogin.cshtml", model);
         }
 
         [HttpGet]
